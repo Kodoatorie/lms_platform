@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { authLimiter } from '../middlewares/rateLimiter.js';
+
+export const createAuthRouter = (authController) => {
+    const router = Router();
+    router.post('/register', authLimiter, authController.register);
+    router.post('/login', authLimiter, authController.login);
+    router.post('/logout', authController.logout);
+    router.post('/refresh', authController.refresh);
+    router.get('/me', authMiddleware, authController.me);
+    return router;
+};
