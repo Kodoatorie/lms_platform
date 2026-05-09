@@ -178,6 +178,94 @@
 * TypeScript
 * SSR + Client Components
 
+### Structure
+frontend/
+├── src/
+│   ├── app/                  # Next.js pages & layouts
+│   ├── components/           # React components
+│   ├── lib/                  # Shared utilities & helpers
+│   ├── store/                # Redux Toolkit store
+│   ├── types/                # TypeScript types
+│   └── pages/                # Legacy pages (if any)
+├── public/
+├── .env.local                # Environment variables
+├── next.config.ts
+├── package.json
+└── tsconfig.json
+
+### Components
+frontend/src/components/
+├── auth/                     # Auth components (login, register, etc.)
+├── courses/                  # Course-related components
+├── dashboard/                # Dashboard components
+├── layout/                   # Layout components (header, footer, etc.)
+├── ui/                       # UI primitives (buttons, inputs, etc.)
+└── utils/                    # Utility components
+
+### App
+frontend/src/app/
+├── (auth)/                   # Auth pages
+│   ├── login/login.tsx
+│   ├── register/register.tsx
+│   └── layout.tsx
+├── (dashboard)/              # Authenticated dashboard pages
+│   ├── layout.tsx
+│   ├── page.tsx              # Main dashboard
+│   ├── courses/page.tsx      # Course list
+│   ├── courses/[id]/page.tsx # Course details
+│   └── profile/page.tsx      # User profile
+├── api/                      # API routes
+│   ├── auth/login/route.ts
+│   └── courses/route.ts
+├── favicon.ico
+├── global.css
+├── globals.ts
+└── layout.tsx
+
+### Lib
+frontend/src/lib/
+├── api/                      # API service
+│   ├── client.ts
+│   └── auth.ts
+├── auth.ts                   # Authentication utilities
+├── axios.ts                  # Axios configuration
+├── constants.ts              # App constants
+├── format.ts                 # Date/number formatting
+├── toast.ts                  # Toast notifications
+└── utils.ts                  # General utilities
+
+### Store
+frontend/src/store/
+├── auth/                     # Auth slice
+│   ├── authSlice.ts
+│   └── authThunks.ts
+├── courses/                  # Courses slice
+│   ├── coursesSlice.ts
+│   └── coursesThunks.ts
+├── store.ts                  # Redux store configuration
+└── index.ts
+
+### Types
+frontend/src/types/
+├── index.ts                  # Export all types
+├── user.ts                   # User-related types
+├── course.ts                 # Course-related types
+├── assignment.ts             # Assignment types
+├── submission.ts             # Submission types
+├── grade.ts                  # Grade types
+└── error.ts                  # Error types
+
+### Mock
+
+frontend/src/mock/
+├── courses/                  # Mock course data
+│   └── index.ts
+├── auth/                     # Mock auth data
+│   └── index.ts
+└── index.ts
+
+P.S. If we don't use this mock data, we can remove this folder. Or if we don't have any endpoints yet, we can remove this folder because some endpoints are already implemented.
+
 ### Backend
 
 * Node.js
@@ -310,3 +398,6 @@ Redis используется как высокоскоростной in-memory
 ## 11. 📌 Summary
 
 Это LMS-платформа с SaaS-потенциалом, ориентированная на масштабирование онлайн-образования. Архитектура должна оставаться модульной, с четким разделением ответственности между frontend, backend и database layer.
+
+
+P.S. If we have some changes by Agents, we must update this `agent.md`, `backend/agent.md`, `frontend/agent.md` files.
