@@ -1,403 +1,138 @@
-# 📘 Technical Specification (Техническое задание)
+# 📘 Technical Specification — LMS (Техническое заание)
 
-## 🧩 Project: Online Learning Management Platform (LMS)
+Краткое и аккуратное описание требований и архитектуры для онлайн-платформы обучения (LMS). Документ ориентирован на разработчиков: продуктовую команду фронтенда, бэкенда и ML.
 
-## 1. 📌 Overview
-
-Проект представляет собой образовательную платформу (LMS — Learning Management System) для онлайн-школ, преподавателей и студентов. Система позволяет создавать курсы, обучать студентов, принимать домашние задания, оценивать прогресс и выдавать цифровые сертификаты.
-
-Основная цель — создать масштабируемую SaaS-платформу для управления образовательным процессом.
-
----
-
-## 2. 🎯 Goals
-
-* Обеспечить полный цикл обучения: от записи на курс до получения сертификата
-* Дать преподавателям инструменты для управления курсами и студентами
-* Дать студентам удобный интерфейс обучения и отслеживания прогресса
-* Обеспечить систему аналитики для обеих сторон
-
----
-
-## 3. 👥 User Roles
-
-### 👨‍🎓 Student (Студент)
-
-* Просмотр курсов
-* Прохождение уроков
-* Отправка домашних заданий
-* Просмотр оценок и прогресса
-* Получение сертификатов
-
-### 👨‍🏫 Teacher (Преподаватель)
-
-* Создание и редактирование курсов
-* Добавление лекций (видео/текст/практика)
-* Проверка домашних заданий
-* Выставление оценок
-* Просмотр аналитики студентов
-
-### 🛠 Admin (ПОКА НЕ НУЖНО!!!!!!!!!!!)
-
-* Управление пользователями
-* Управление платформой
+## Оглавление
+- 1. Обзор
+- 2. Цели
+- 3. Роли пользователей
+- 4. Ключевые фичи
+- 5. ML / Proctoring
+- 6. Схема данных (high-level)
+- 7. Архитектура
+- 8. Redis / Инфраструктура
+- 9. Auth & RBAC
+- 10. Нефункциональные требования
+- 11. Будущие улучшения
+- 12. Риски
+- 13. Итог
+- П. С. Про агент-файлы
 
 ---
 
-## 4. 📚 Core Features
-
-### 4.1 Courses System
-
-* Создание курсов
-* Структура курса:
-
-  * Course → Modules → Lessons
-* Типы контента:
-
-  * Video (YouTube links)
-  * Text lecture
-  * Practice tasks
+## 1. Обзор
+LMS — SaaS-платформа для создания и проведения онлайн-курсов: регистрация, обучение, домашние задания, оценивание и цифровые сертификаты. Цель — модульная, масштабируемая система с четким разделением frontend/backend.
 
 ---
 
-### 4.2 Assignments System
-
-* Создание домашних заданий
-* Отправка решений студентами
-* Проверка и оценка преподавателем
-
----
-
-### 4.3 Grading System
-
-* Оценки за задания
-* Балльная система
-* Итоговая оценка курса
+## 2. Цели
+- Полный цикл обучения: от записи до сертификата
+- Удобные инструменты для преподавателя и студента
+- Аналитика для принятия решений
+- Поддержка real-time и ML-функционала (по необходимости)
 
 ---
 
-### 4.4 Certificates
-
-* Автоматическая генерация PDF
-* Имя студента + курс + дата
-* Подпись преподавателя (digital)
-* Возможность верификации (future feature)
+## 3. Роли пользователей
+- Student — просмотр курсов, прохождение уроков, отправка задач, получение сертификатов.
+- Teacher — создание/редактирование курсов, проверка задач, выставление оценок, аналитика.
+- Admin — управление платформой и пользователями (опционально).
 
 ---
 
-### 4.5 Analytics
-
-#### Student Analytics:
-
-* Прогресс по курсам
-* Выполненные задания
-* Средний балл
-
-#### Teacher Analytics:
-
-* Активность студентов
-* Процент завершения курсов
-* Статистика по заданиям
+## 4. Ключевые фичи
+- Курсы: Course → Modules → Lessons; поддержка видео (YouTube), текста, практики.
+- Домашние задания: создание, отправка, проверка, выставление оценок.
+- Оценивание: балльная система, итоговая оценка курса.
+- Сертификаты: автоматическая генерация PDF, цифровая подпись, верификация (future).
+- Аналитика: прогресс студентов, completion rate, статистика по заданиям.
+- Редактор курса: rich text / markdown, управление структурой.
 
 ---
 
-### 4.6 Course Editor
-
-* Создание и редактирование лекций
-* Поддержка rich text / markdown
-* Добавление видео ссылок
-* Управление структурой курса
-
----
-
-## 4.7 🧠 ML Monitoring System (AI Proctoring)
-
-### 4.7.1 AI Code Detection System
-
-* Анализ кода студента в реальном времени или при сдаче задания
-* Определение:
-
-  * использование AI-генерации (ChatGPT / Copilot-like patterns)
-  * подозрительных паттернов копирования
-  * similarity detection с внешними источниками
-* Возможная интеграция:
-
-  * AST-анализ кода
-  * embeddings similarity search
-  * plagiarism detection engine
+## 5. ML / Proctoring (AI Monitoring)
+- AI Code Detection:
+  - AST-анализ, embeddings similarity, plagiarism detection.
+  - Выявление паттернов, характерных для генеративных моделей.
+- Camera-based Proctoring:
+  - Face detection, multiple faces, gaze tracking, anomaly detection.
+  - Хранение только метаданных; запись видео — опция с согласия.
+- Приватность: явное согласие студента, прозрачность использования данных.
 
 ---
 
-### 4.7.2 Camera-Based Student Monitoring (Proctoring)
+## 6. Схема данных (high-level)
+Основные сущности:
+- User, StudentProfile, TeacherProfile
+- Course, Module, Lesson
+- Assignment, Submission, Grade
+- Certificate, Enrollment
 
-* Использование камеры во время обучения / экзамена
-* Возможности:
-
-  * отслеживание присутствия студента
-  * detection: multiple faces / no face / looking away
-  * фиксация подозрительного поведения
-* ML задачи:
-
-  * face detection
-  * gaze tracking (направление взгляда)
-  * anomaly detection в поведении
+(Более детальная ER-диаграмма — в отдельном документе.)
 
 ---
 
-### 4.7.3 Privacy & Ethics Considerations
+## 7. Архитектура (кратко)
 
-* обязательное согласие студента на мониторинг
-* прозрачность использования данных
-* хранение только метаданных (без постоянной записи видео — опционально)
+Frontend
+- Next.js + TypeScript (SSR + Client Components)
+- Папки: src/app, src/components, src/lib, src/store, src/types
+- Компоненты: auth, courses, dashboard, ui, layout
 
----
+Backend
+- Node.js + Express (REST API)
+- PostgreSQL — источник истины; частичное использование JSON для метаданных
 
-## 5. 🗄️ Data Model (High-level)
-
-### Основные сущности:
-
-* User
-* StudentProfile
-* TeacherProfile
-* Course
-* Module
-* Lesson
-* Assignment
-* Submission
-* Grade
-* Certificate
-* Enrollment
+Dev / Mock
+- mock-data можно использовать временно; удалять при наличии реальных эндпоинтов.
 
 ---
 
-## 6. 🧱 Architecture
-
-### Frontend
-
-* Next.js
-* TypeScript
-* SSR + Client Components
-
-### Structure
-frontend/
-├── src/
-│   ├── app/                  # Next.js pages & layouts
-│   ├── components/           # React components
-│   ├── lib/                  # Shared utilities & helpers
-│   ├── store/                # Redux Toolkit store
-│   ├── types/                # TypeScript types
-│   └── pages/                # Legacy pages (if any)
-├── public/
-├── .env.local                # Environment variables
-├── next.config.ts
-├── package.json
-└── tsconfig.json
-
-### Components
-frontend/src/components/
-├── auth/                     # Auth components (login, register, etc.)
-├── courses/                  # Course-related components
-├── dashboard/                # Dashboard components
-├── layout/                   # Layout components (header, footer, etc.)
-├── ui/                       # UI primitives (buttons, inputs, etc.)
-└── utils/                    # Utility components
-
-### App
-frontend/src/app/
-├── (auth)/                   # Auth pages
-│   ├── login/login.tsx
-│   ├── register/register.tsx
-│   └── layout.tsx
-├── (dashboard)/              # Authenticated dashboard pages
-│   ├── layout.tsx
-│   ├── page.tsx              # Main dashboard
-│   ├── courses/page.tsx      # Course list
-│   ├── courses/[id]/page.tsx # Course details
-│   └── profile/page.tsx      # User profile
-├── api/                      # API routes
-│   ├── auth/login/route.ts
-│   └── courses/route.ts
-├── favicon.ico
-├── global.css
-├── globals.ts
-└── layout.tsx
-
-### Lib
-frontend/src/lib/
-├── api/                      # API service
-│   ├── client.ts
-│   └── auth.ts
-├── auth.ts                   # Authentication utilities
-├── axios.ts                  # Axios configuration
-├── constants.ts              # App constants
-├── format.ts                 # Date/number formatting
-├── toast.ts                  # Toast notifications
-└── utils.ts                  # General utilities
-
-### Store
-frontend/src/store/
-├── auth/                     # Auth slice
-│   ├── authSlice.ts
-│   └── authThunks.ts
-├── courses/                  # Courses slice
-│   ├── coursesSlice.ts
-│   └── coursesThunks.ts
-├── store.ts                  # Redux store configuration
-└── index.ts
-
-### Types
-frontend/src/types/
-├── index.ts                  # Export all types
-├── user.ts                   # User-related types
-├── course.ts                 # Course-related types
-├── assignment.ts             # Assignment types
-├── submission.ts             # Submission types
-├── grade.ts                  # Grade types
-└── error.ts                  # Error types
-
-### Mock
-
-frontend/src/mock/
-├── courses/                  # Mock course data
-│   └── index.ts
-├── auth/                     # Mock auth data
-│   └── index.ts
-└── index.ts
-
-P.S. If we don't use this mock data, we can remove this folder. Or if we don't have any endpoints yet, we can remove this folder because some endpoints are already implemented.
-
-### Backend
-
-* Node.js
-* Express.js
-* REST API
-
-### Database
-
-* PostgreSQL
-* Partial JSON usage for flexible metadata (not core relations)
+## 8. Redis / Инфраструктура
+Используется как in-memory слой для:
+- Кеширования (списки курсов, структуры, профили)
+- Сессий / refresh token / черный список JWT
+- Rate limiting / защита нагрузочных ML-эндпоинтов
+- Runtime state для proctoring (TTL)
+- Pub/Sub для real-time (чаты, нотификации)
+- Брокер очередей (BullMQ) для фоновых задач: генерация PDF, ML-обработка, аналитика
 
 ---
 
-## 6.1 ⚡ Redis Infrastructure Layer
-
-Redis используется как высокоскоростной in-memory слой для поддержки real-time функций, кэширования и фоновых задач.
-
-### 6.1.1 📦 Caching Layer
-
-* Кэширование часто запрашиваемых данных:
-
-  * список курсов
-  * структура курсов (modules → lessons)
-  * профили пользователей
-  * аналитика студентов и преподавателей
-* Снижение нагрузки на PostgreSQL
-* TTL-очистка устаревших данных
+## 9. Authentication & Authorization
+- Поддержка JWT или session-based auth
+- RBAC: student, teacher, admin
+- Где нужно — уровень доступа на уровне API и UI
 
 ---
 
-### 6.1.2 🔐 Session & Auth Layer
-
-* Хранение сессий пользователей (опционально)
-* Refresh tokens storage
-* Blacklist JWT токенов (logout / revoke)
-
----
-
-### 6.1.3 🚦 Rate Limiting & Security
-
-* Ограничение запросов API (per user / IP)
-* Защита ML endpoints и тяжелых операций
-* Предотвращение abuse системы (особенно proctoring)
+## 10. Нефункциональные требования
+- Масштабируемость
+- Безопасность и соответствие приватности
+- Целостность данных (Postgres как source of truth)
+- Модульность и тестируемость
 
 ---
 
-### 6.1.4 🧠 ML & Proctoring Runtime State
-
-* Хранение временных данных:
-
-  * состояние камеры (face detected / no face)
-  * активность студента
-  * текущая сессия экзамена
-  * промежуточные результаты анализа кода
-* Использование TTL для автоматического удаления данных
+## 11. Будущие улучшения
+- Реалтайм-чат
+- AI-ассистент для оценки и обратной связи
+- Собственный видеохостинг (вместо YouTube)
+- Мобильное приложение
+- White-label / multi-school SaaS
+- Система публичной верификации сертификатов
 
 ---
 
-### 6.1.5 📡 Real-time Communication Layer
-
-* Pub/Sub для WebSocket событий
-* Live updates:
-
-  * чат студент ↔ преподаватель
-  * уведомления
-  * мониторинг экзаменов
+## 12. Риски
+- Перегруженность редактора курса — усложнение UX
+- Размывание бизнес-логики между frontend и backend
+- Чрезмерное использование JSON в базе вместо нормализованных схем
+- Этические / правовые вопросы при proctoring
 
 ---
 
-### 6.1.6 📊 Background Jobs Queue (BullMQ)
+## 13. Итог
+LMS с SaaS-потенциалом: фокус на модульной архитектуре, безопасности и расширяемости. В приоритетах — четкое разделение ответственности, мониторинг производительности и конфиденциальности данных.
 
-* Redis как брокер очередей задач:
-
-  * генерация PDF сертификатов
-  * анализ кода студентов (AI detection)
-  * ML обработка видео/камеры
-  * расчет аналитики
-
----
-
-### 6.1.7 📈 Aggregations & Counters
-
-* Быстрые метрики без SQL агрегаций:
-
-  * leaderboard студентов
-  * активность курсов
-  * completion rate
-
----
-
-## 7. 🔐 Authentication & Authorization
-
-* JWT or session-based auth
-* Role-based access control (RBAC):
-
-  * student
-  * teacher
-  * admin
-
----
-
-## 8. 📦 Non-Functional Requirements
-
-* Scalable architecture
-* Secure authentication
-* Data consistency (PostgreSQL as source of truth)
-* Modular backend structure
-
----
-
-## 9. 🚀 Future Improvements
-
-* Real-time chat between student and teacher
-* AI assistant for grading / feedback
-* Video hosting instead of YouTube links
-* Mobile application
-* Multi-school SaaS system (white-label)
-* Certificate verification system (public links)
-
----
-
-## 10. ⚠️ Risks
-
-* Overcomplication of course editor
-* Mixing business logic between frontend and backend
-* Excessive JSON usage in database
-
----
-
-## 11. 📌 Summary
-
-Это LMS-платформа с SaaS-потенциалом, ориентированная на масштабирование онлайн-образования. Архитектура должна оставаться модульной, с четким разделением ответственности между frontend, backend и database layer.
-
-
-P.S. If we have some changes by Agents, we must update this `agent.md`, `backend/agent.md`, `frontend/agent.md` files.
+П. С. Если появляется изменение со стороны агентов — обновляем файлы agent.md в корнях: agent.md, backend/agent.md, frontend/agent.md.
