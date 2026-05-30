@@ -42,6 +42,32 @@ export class CourseModel {
         return result.rows[0];
     }
 
+    async getCurriculum(courseId) {
+        const query = `
+            SELECT 
+                m.id as module_id, 
+                m.title as module_title, 
+                m.order_index as module_order,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', l.id,
+                            'title', l.title,
+                            'content_type', l.content_type,
+                            'order_index', l.order_index
+                        ) ORDER BY l.order_index ASC
+                    ) FILTER (WHERE l.id IS NOT NULL), '[]'
+                ) as lessons
+            FROM modules m
+            LEFT JOIN lessons l ON m.id = l.module_id
+            WHERE m.course_id = $1
+            GROUP BY m.id
+            ORDER BY m.order_index ASC;
+        `;
+        const result = await this.pool.query(query, [courseId]);
+        return result.rows;
+    }
+
     async delete(id) {
         await this.pool.query(`DELETE FROM courses WHERE id = $1`, [id]);
         return true;

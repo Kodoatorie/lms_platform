@@ -12,6 +12,9 @@ export class RefreshTokenModel {
         const res = await this.pool.query(`SELECT * FROM refresh_tokens WHERE token_hash = $1`, [tokenHash]);
         return res.rows[0];
     }
+    async deleteByHash(tokenHash) {
+        await this.pool.query(`DELETE FROM refresh_tokens WHERE token_hash = $1`, [tokenHash]);
+    }
     async deleteByUserId(userId) {
         await this.pool.query(`DELETE FROM refresh_tokens WHERE user_id = $1`, [userId]);
     }

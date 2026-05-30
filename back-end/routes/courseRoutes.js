@@ -8,6 +8,7 @@ export const createCourseRouter = (courseController) => {
     router.post('/', roleMiddleware(['teacher']), courseController.create);
     router.get('/', courseController.getAll);
     router.get('/:courseId', courseController.getOne);
+    router.get('/:courseId/curriculum', courseController.getCurriculum);
     router.patch('/:courseId', roleMiddleware(['teacher']), courseController.update);
     router.delete('/:courseId', roleMiddleware(['teacher']), courseController.delete);
     return router;

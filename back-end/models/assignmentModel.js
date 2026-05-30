@@ -3,11 +3,11 @@ export class AssignmentModel {
         this.pool = pool;
     }
 
-    async create({ lessonId, title, description, max_score }) {
+    async create({ lessonId, title, description, max_score, due_date }) {
         const result = await this.pool.query(
-            `INSERT INTO assignments (lesson_id, title, description, max_score)
-            VALUES ($1, $2, $3, $4) RETURNING *`,
-            [lessonId, title, description, max_score]
+            `INSERT INTO assignments (lesson_id, title, description, max_score, due_date)
+            VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+            [lessonId, title, description, max_score, due_date || null]
         );
         return result.rows[0];
     }
@@ -25,13 +25,16 @@ export class AssignmentModel {
         return result.rows[0];
     }
 
-    async update(id, { title, description, maxScore }) {
+    async update(id, { title, description, maxScore, due_date }) {
         const result = await this.pool.query(
             `UPDATE assignments 
-             SET title = COALESCE($1, title), description = COALESCE($2, description), 
-                 max_score = COALESCE($3, max_score), updated_at = NOW()
-             WHERE id = $4 RETURNING *`,
-            [title, description, maxScore, id]
+             SET title = COALESCE($1, title), 
+                 description = COALESCE($2, description), 
+                 max_score = COALESCE($3, max_score),
+                 due_date = COALESCE($4, due_date),
+                 updated_at = NOW()
+             WHERE id = $5 RETURNING *`,
+            [title, description, maxScore, due_date, id]
         );
         return result.rows[0];
     }

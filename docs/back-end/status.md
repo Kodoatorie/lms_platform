@@ -62,8 +62,8 @@
 4. **PDF generation**  
    Certificate worker only logs – no actual PDF file creation or storage.
 
-5. **Proctoring**  
-   Only skeleton (tables and queue). No integration with camera/ML service.
+5. **Proctoring UI integration**  
+   Proctoring API is implemented (`/api/proctoring`), but ML integration with the camera still needs a frontend component wrapper.
 
 6. **Admin role**  
    Completely missing per specification (won't be added yet).

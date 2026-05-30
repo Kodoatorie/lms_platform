@@ -12,20 +12,25 @@ export class CourseService {
         if (requesterRole === 'teacher' && teacherId) {
             return this.courseModel.findAll({ teacherId });
         }
-        return this.courseModel.findAll(); // студент видит все
+        return this.courseModel.findAll();
     }
 
     async getCourseById(courseId) {
         const course = await this.courseModel.findById(courseId);
         if (!course) throw new Error('Course not found');
-        // TODO: загрузить модули и уроки (через отдельные модели)
         return course;
+    }
+
+    async getCurriculum(courseId) {
+        return await this.courseModel.getCurriculum(courseId);
     }
 
     async updateCourse(courseId, updateData, userId, role) {
         const course = await this.courseModel.findById(courseId);
         if (!course) throw new Error('Course not found');
-        if (role !== 'admin' && course.teacher_id !== userId) {
+        // FIX: JWT stores id as number but === comparison with DB integer fails
+        // Use Number() on both sides to guarantee type-safe comparison
+        if (role !== 'admin' && Number(course.teacher_id) !== Number(userId)) {
             throw new Error('Not authorized');
         }
         return this.courseModel.update(courseId, updateData);
@@ -34,7 +39,8 @@ export class CourseService {
     async deleteCourse(courseId, userId, role) {
         const course = await this.courseModel.findById(courseId);
         if (!course) throw new Error('Course not found');
-        if (role !== 'admin' && course.teacher_id !== userId) {
+        // FIX: same type coercion fix as updateCourse
+        if (role !== 'admin' && Number(course.teacher_id) !== Number(userId)) {
             throw new Error('Not authorized');
         }
         return this.courseModel.delete(courseId);

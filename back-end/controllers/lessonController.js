@@ -23,6 +23,15 @@ export class LessonController {
         }
     };
 
+    getOne = async (req, res, next) => {
+        try {
+            const lesson = await this.lessonService.getLessonById(req.params.lessonId);
+            res.json(lesson);
+        } catch (err) {
+            next(err);
+        }
+    };
+
     update = async (req, res, next) => {
         try {
             const { lessonId } = req.params;

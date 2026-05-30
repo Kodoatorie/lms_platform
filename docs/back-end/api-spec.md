@@ -502,6 +502,53 @@ Response:
 
 ---
 
+## 👁️ Proctoring (ML Monitoring)
+
+### Start session
+- Endpoint: `POST /proctoring/sessions`
+- Auth: Required
+
+Request:
+```json
+{ "courseId": 1 }
+```
+
+Response:
+```json
+{ "id": 1, "user_id": 1, "course_id": 1, "status": "active", "started_at": "iso8601" }
+```
+
+---
+
+### End session
+- Endpoint: `POST /proctoring/sessions/:sessionId/end`
+- Auth: Required
+
+Response: session object with `status` = `"ended"` or `"flagged"`.
+
+---
+
+### Log event
+- Endpoint: `POST /proctoring/sessions/:sessionId/events`
+- Auth: Required
+
+Request:
+```json
+{ "eventType": "face_detected|no_face|multiple_faces|tab_switch|suspicious_behavior", "metadata?": {} }
+```
+
+Response: event object.
+
+---
+
+### Get session events
+- Endpoint: `GET /proctoring/sessions/:sessionId/events`
+- Auth: Student (own) or Teacher
+
+Response: array of events.
+
+---
+
 ## ❤️ Health
 
 ### Health check

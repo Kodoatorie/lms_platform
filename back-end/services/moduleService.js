@@ -7,7 +7,7 @@ export class ModuleService {
     async createModule(courseId, title, currentUserId, userRole) {
         const course = await this.courseModel.findById(courseId);
         if (!course) throw new Error('Course not found');
-        if (userRole !== 'admin' && course.teacher_id !== currentUserId) {
+        if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
         const maxOrder = await this.moduleModel.getMaxOrderIndex(courseId);
@@ -22,7 +22,7 @@ export class ModuleService {
         const module = await this.moduleModel.findById(moduleId);
         if (!module) throw new Error('Module not found');
         const course = await this.courseModel.findById(module.course_id);
-        if (userRole !== 'admin' && course.teacher_id !== currentUserId) {
+        if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
         return this.moduleModel.update(moduleId, { title, orderIndex });
@@ -32,7 +32,7 @@ export class ModuleService {
         const module = await this.moduleModel.findById(moduleId);
         if (!module) throw new Error('Module not found');
         const course = await this.courseModel.findById(module.course_id);
-        if (userRole !== 'admin' && course.teacher_id !== currentUserId) {
+        if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
         return this.moduleModel.delete(moduleId);

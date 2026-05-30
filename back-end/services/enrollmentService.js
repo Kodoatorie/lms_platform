@@ -1,10 +1,13 @@
 export class EnrollmentService {
-    constructor(enrollmentModel, lessonProgressModel, courseModel, userModel, statsModel) {
+    constructor(enrollmentModel, lessonProgressModel, courseModel, userModel, statsModel, lessonModel, moduleModel, pool) {
         this.enrollmentModel = enrollmentModel;
         this.lessonProgressModel = lessonProgressModel;
         this.courseModel = courseModel;
         this.userModel = userModel;
         this.statsModel = statsModel;
+        this.lessonModel = lessonModel;
+        this.moduleModel = moduleModel;
+        this.pool = pool;
     }
 
     async enrollUser(userId, courseId) {
@@ -38,6 +41,13 @@ export class EnrollmentService {
                 await this.enrollmentModel.updateProgress(userId, module.course_id, percent);
                 if (percent === 100) {
                     await this.enrollmentModel.updateStatus(userId, module.course_id, 'completed');
+                    // Триггер генерации сертификата
+                    try {
+                        const { addCertificateJob } = await import('../lib/queues.js');
+                        await addCertificateJob(userId, module.course_id);
+                    } catch (err) {
+                        console.error('Failed to add certificate job:', err);
+                    }
                 }
             }
         }

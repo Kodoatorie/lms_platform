@@ -11,7 +11,7 @@ export class AssignmentService {
         if (!lesson) throw new Error('Lesson not found');
         const module = await this.moduleModel.findById(lesson.module_id);
         const course = await this.courseModel.findById(module.course_id);
-        if (userRole !== 'admin' && course.teacher_id !== currentUserId) {
+        if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
         return this.assignmentModel.create({ ...data, lessonId });
@@ -27,7 +27,7 @@ export class AssignmentService {
         const lesson = await this.lessonModel.findById(assignment.lesson_id);
         const module = await this.moduleModel.findById(lesson.module_id);
         const course = await this.courseModel.findById(module.course_id);
-        if (userRole !== 'admin' && course.teacher_id !== currentUserId) {
+        if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
         return this.assignmentModel.update(assignmentId, data);
@@ -39,7 +39,7 @@ export class AssignmentService {
         const lesson = await this.lessonModel.findById(assignment.lesson_id);
         const module = await this.moduleModel.findById(lesson.module_id);
         const course = await this.courseModel.findById(module.course_id);
-        if (userRole !== 'admin' && course.teacher_id !== currentUserId) {
+        if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
         return this.assignmentModel.delete(assignmentId);

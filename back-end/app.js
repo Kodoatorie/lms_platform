@@ -28,6 +28,7 @@ import { SubmissionModel } from './models/submissionModel.js';
 import { GradeModel } from './models/gradeModel.js';
 import { CertificateModel } from './models/certificateModel.js';
 import { StatsModel } from './models/statsModel.js';
+import { ProctoringModel } from './models/proctoringModel.js';
 
 // Services
 import { AuthService } from './services/authService.js';
@@ -40,6 +41,8 @@ import { SubmissionService } from './services/submissionService.js';
 import { GradeService } from './services/gradeService.js';
 import { CertificateService } from './services/certificateService.js';
 import { AnalyticsService } from './services/analyticsService.js';
+import { UserService } from './services/userService.js';
+import { ProctoringService } from './services/proctoringService.js';
 
 // Controllers
 import { AuthController } from './controllers/authController.js';
@@ -52,6 +55,8 @@ import { SubmissionController } from './controllers/submissionController.js';
 import { GradeController } from './controllers/gradeController.js';
 import { CertificateController } from './controllers/certificateController.js';
 import { AnalyticsController } from './controllers/analyticsController.js';
+import { UserController } from './controllers/userController.js';
+import { ProctoringController } from './controllers/proctoringController.js';
 
 // Routes
 import { createAuthRouter } from './routes/authRoutes.js';
@@ -64,6 +69,8 @@ import { createSubmissionRouter } from './routes/submissionRoutes.js';
 import { createGradeRouter } from './routes/gradeRoutes.js';
 import { createCertificateRouter } from './routes/certificateRoutes.js';
 import { createAnalyticsRouter } from './routes/analyticsRoutes.js';
+import { createUserRouter } from './routes/userRoutes.js';
+import { createProctoringRouter } from './routes/proctoringRoutes.js';
 
 dotenv.config();
 
@@ -75,6 +82,13 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(limiter);
+
+// Serve static files
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, 'public')));
 
 // PostgreSQL connection pool
 const pool = new pg.Pool({ connectionString: config.postgresUri });
@@ -105,6 +119,7 @@ async function startServer() {
         const gradeModel = new GradeModel(pool);
         const certificateModel = new CertificateModel(pool);
         const statsModel = new StatsModel(pool);
+        const proctoringModel = new ProctoringModel(pool);
 
         // Services
         const authService = new AuthService(userModel, refreshTokenModel, studentProfileModel, teacherProfileModel, redisClient);
@@ -123,6 +138,8 @@ async function startServer() {
         const gradeService = new GradeService(gradeModel, submissionModel, assignmentModel, statsModel, lessonModel, moduleModel);
         const certificateService = new CertificateService(certificateModel, enrollmentModel, courseModel, userModel);
         const analyticsService = new AnalyticsService(statsModel, enrollmentModel, gradeModel, assignmentModel, courseModel);
+        const userService = new UserService(studentProfileModel, teacherProfileModel);
+        const proctoringService = new ProctoringService(proctoringModel);
 
         // Controllers
         const authController = new AuthController(authService);
@@ -135,6 +152,8 @@ async function startServer() {
         const gradeController = new GradeController(gradeService);
         const certificateController = new CertificateController(certificateService);
         const analyticsController = new AnalyticsController(analyticsService);
+        const userController = new UserController(userService);
+        const proctoringController = new ProctoringController(proctoringService);
 
         // Routes
 app.use('/api/auth', createAuthRouter(authController));
@@ -147,6 +166,8 @@ app.use('/api', createSubmissionRouter(submissionController));
 app.use('/api', createGradeRouter(gradeController));
 app.use('/api', createCertificateRouter(certificateController));
 app.use('/api', createAnalyticsRouter(analyticsController));
+app.use('/api', createUserRouter(userController));
+app.use('/api', createProctoringRouter(proctoringController));
 
         // Health check
         app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));

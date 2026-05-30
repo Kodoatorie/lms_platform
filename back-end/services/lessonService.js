@@ -9,7 +9,7 @@ export class LessonService {
         const module = await this.moduleModel.findById(moduleId);
         if (!module) throw new Error('Module not found');
         const course = await this.courseModel.findById(module.course_id);
-        if (userRole !== 'admin' && course.teacher_id !== currentUserId) {
+        if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
         const maxOrder = await this.lessonModel.getMaxOrderIndex(moduleId);
@@ -20,12 +20,18 @@ export class LessonService {
         return this.lessonModel.findByModule(moduleId);
     }
 
+    async getLessonById(lessonId) {
+        const lesson = await this.lessonModel.findById(lessonId);
+        if (!lesson) throw new Error('Lesson not found');
+        return lesson;
+    }
+
     async updateLesson(lessonId, data, currentUserId, userRole) {
         const lesson = await this.lessonModel.findById(lessonId);
         if (!lesson) throw new Error('Lesson not found');
         const module = await this.moduleModel.findById(lesson.module_id);
         const course = await this.courseModel.findById(module.course_id);
-        if (userRole !== 'admin' && course.teacher_id !== currentUserId) {
+        if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
         return this.lessonModel.update(lessonId, data);
@@ -36,7 +42,7 @@ export class LessonService {
         if (!lesson) throw new Error('Lesson not found');
         const module = await this.moduleModel.findById(lesson.module_id);
         const course = await this.courseModel.findById(module.course_id);
-        if (userRole !== 'admin' && course.teacher_id !== currentUserId) {
+        if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
         return this.lessonModel.delete(lessonId);

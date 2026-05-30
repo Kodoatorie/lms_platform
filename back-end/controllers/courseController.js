@@ -34,6 +34,15 @@ export class CourseController {
         }
     };
 
+    getCurriculum = async (req, res, next) => {
+        try {
+            const curriculum = await this.courseService.getCurriculum(req.params.courseId);
+            res.json(curriculum);
+        } catch (err) {
+            next(err);
+        }
+    };
+
     update = async (req, res, next) => {
         try {
             const course = await this.courseService.updateCourse(
