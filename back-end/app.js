@@ -29,6 +29,7 @@ import { GradeModel } from './models/gradeModel.js';
 import { CertificateModel } from './models/certificateModel.js';
 import { StatsModel } from './models/statsModel.js';
 import { ProctoringModel } from './models/proctoringModel.js';
+import { ReviewModel } from './models/reviewModel.js';
 
 // Services
 import { AuthService } from './services/authService.js';
@@ -43,6 +44,7 @@ import { CertificateService } from './services/certificateService.js';
 import { AnalyticsService } from './services/analyticsService.js';
 import { UserService } from './services/userService.js';
 import { ProctoringService } from './services/proctoringService.js';
+import { ReviewService } from './services/reviewService.js';
 
 // Controllers
 import { AuthController } from './controllers/authController.js';
@@ -57,6 +59,8 @@ import { CertificateController } from './controllers/certificateController.js';
 import { AnalyticsController } from './controllers/analyticsController.js';
 import { UserController } from './controllers/userController.js';
 import { ProctoringController } from './controllers/proctoringController.js';
+import { ReviewController } from './controllers/reviewController.js';
+import { StudentController } from './controllers/studentController.js';
 
 // Routes
 import { createAuthRouter } from './routes/authRoutes.js';
@@ -71,6 +75,9 @@ import { createCertificateRouter } from './routes/certificateRoutes.js';
 import { createAnalyticsRouter } from './routes/analyticsRoutes.js';
 import { createUserRouter } from './routes/userRoutes.js';
 import { createProctoringRouter } from './routes/proctoringRoutes.js';
+import { createReviewRouter } from './routes/reviewRoutes.js';
+import { createStudentRouter } from './routes/studentRoutes.js';
+
 
 dotenv.config();
 
@@ -135,8 +142,12 @@ async function startServer() {
         );
         const assignmentService = new AssignmentService(assignmentModel, lessonModel, moduleModel, courseModel);
         const submissionService = new SubmissionService(submissionModel, assignmentModel, lessonModel, moduleModel, courseModel);
-        const gradeService = new GradeService(gradeModel, submissionModel, assignmentModel, statsModel, lessonModel, moduleModel);
-        const certificateService = new CertificateService(certificateModel, enrollmentModel, courseModel, userModel);
+        const gradeService = new GradeService(
+            gradeModel, submissionModel, assignmentModel,
+            lessonModel, moduleModel, statsModel   // <-- added lessonModel, moduleModel
+        );
+
+        const certificateService = new CertificateService(certificateModel, enrollmentModel, courseModel, userModel, studentProfileModel);
         const analyticsService = new AnalyticsService(statsModel, enrollmentModel, gradeModel, assignmentModel, courseModel);
         const userService = new UserService(studentProfileModel, teacherProfileModel);
         const proctoringService = new ProctoringService(proctoringModel);
@@ -155,6 +166,13 @@ async function startServer() {
         const userController = new UserController(userService);
         const proctoringController = new ProctoringController(proctoringService);
 
+        // Reviews
+        const reviewModel = new ReviewModel(pool);
+        const reviewService = new ReviewService(reviewModel, enrollmentModel);
+        const reviewController = new ReviewController(reviewService);
+        const studentController = new StudentController(studentProfileModel, courseModel);
+
+
         // Routes
 app.use('/api/auth', createAuthRouter(authController));
 app.use('/api/courses', createCourseRouter(courseController));
@@ -163,6 +181,8 @@ app.use('/api', createLessonRouter(lessonController));
 app.use('/api', createEnrollmentRouter(enrollmentController));
 app.use('/api', createAssignmentRouter(assignmentController));
 app.use('/api', createSubmissionRouter(submissionController));
+app.use('/api', createReviewRouter(reviewController));
+app.use('/api', createStudentRouter(studentController));
 app.use('/api', createGradeRouter(gradeController));
 app.use('/api', createCertificateRouter(certificateController));
 app.use('/api', createAnalyticsRouter(analyticsController));
@@ -176,7 +196,7 @@ app.use('/api', createProctoringRouter(proctoringController));
         app.use(errorHandler);
 
         // Start workers (BullMQ)
-        setupWorkers();
+        setupWorkers(pool);
         console.log('🚀 BullMQ workers started');
 
         // Start server

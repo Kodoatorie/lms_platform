@@ -14,7 +14,11 @@ export class SubmissionModel {
 
     async findByAssignmentAndUser(assignmentId, userId) {
         const result = await this.pool.query(
-            `SELECT * FROM submissions WHERE assignment_id = $1 AND user_id = $2 ORDER BY submitted_at DESC LIMIT 1`,
+            `SELECT s.*, g.score, g.feedback, g.graded_at
+             FROM submissions s
+             LEFT JOIN grades g ON g.submission_id = s.id
+             WHERE s.assignment_id = $1 AND s.user_id = $2
+             ORDER BY s.submitted_at DESC LIMIT 1`,
             [assignmentId, userId]
         );
         return result.rows[0];
@@ -22,12 +26,38 @@ export class SubmissionModel {
 
     async findByAssignment(assignmentId) {
         const result = await this.pool.query(
-            `SELECT s.*, u.email 
+            `SELECT s.*, u.email,
+                    sp.full_name,
+                    g.score, g.feedback, g.graded_at, g.id as grade_id
              FROM submissions s
              JOIN users u ON s.user_id = u.id
+             LEFT JOIN student_profiles sp ON sp.user_id = s.user_id
+             LEFT JOIN grades g ON g.submission_id = s.id
              WHERE s.assignment_id = $1
              ORDER BY s.submitted_at DESC`,
             [assignmentId]
+        );
+        return result.rows;
+    }
+
+    // All submissions across ALL assignments in a course (for teacher grading page)
+    async findByCourse(courseId) {
+        const result = await this.pool.query(
+            `SELECT s.*, u.email,
+                    sp.full_name,
+                    a.title as assignment_title, a.max_score,
+                    l.title as lesson_title,
+                    g.score, g.feedback, g.graded_at, g.id as grade_id
+             FROM submissions s
+             JOIN users u ON s.user_id = u.id
+             LEFT JOIN student_profiles sp ON sp.user_id = s.user_id
+             JOIN assignments a ON s.assignment_id = a.id
+             JOIN lessons l ON a.lesson_id = l.id
+             JOIN modules m ON l.module_id = m.id
+             LEFT JOIN grades g ON g.submission_id = s.id
+             WHERE m.course_id = $1
+             ORDER BY g.graded_at NULLS FIRST, s.submitted_at DESC`,
+            [courseId]
         );
         return result.rows;
     }

@@ -1,107 +1,213 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '../../../store/hooks';
-import { Button } from '../../../components/ui/button';
 import apiClient from '../../../lib/api/client';
 
-export default function CertificatesPage() {
-  const { user } = useAppSelector((state) => state.auth);
-  const [certificates, setCertificates] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
-  useEffect(() => {
-    const fetchCertificates = async () => {
-      try {
-        const { data } = await apiClient.get('/me/certificates');
-        setCertificates(data);
-      } catch (err) {
-        console.error('Failed to load certificates', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    if (user?.role !== 'teacher') {
-      fetchCertificates();
+interface Certificate {
+  id: number;
+  course_id: number;
+  course_title: string;
+  issued_at: string;
+  pdf_url: string | null;
+  verification_code: string;
+}
+
+function CertificateCard({ cert }: { cert: Certificate }) {
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (!cert.pdf_url) return;
+    setDownloading(true);
+    try {
+      const url = `${BACKEND_URL}${cert.pdf_url}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('File not found');
+      const blob = await response.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `certificate-${cert.verification_code}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      alert('Download failed. The file may still be generating — please try again in a moment.');
+    } finally {
+      setDownloading(false);
     }
-  }, [user]);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden flex flex-col">
+      {/* Gold gradient header */}
+      <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-8 flex items-center justify-center">
+        <div className="h-20 w-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+          <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"
+              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="p-5 flex-1 flex flex-col">
+        <h3 className="text-base font-bold text-slate-900 line-clamp-2 min-h-[2.5rem]">
+          {cert.course_title || `Course #${cert.course_id}`}
+        </h3>
+        <div className="mt-3 space-y-1 text-sm text-slate-500">
+          <p>
+            Issued:{' '}
+            <span className="text-slate-700">
+              {new Date(cert.issued_at).toLocaleDateString('en-US', {
+                month: 'long', day: 'numeric', year: 'numeric',
+              })}
+            </span>
+          </p>
+          <p className="font-mono text-xs text-slate-400 truncate" title={cert.verification_code}>
+            ID: {cert.verification_code}
+          </p>
+        </div>
+
+        <div className="mt-auto pt-4 border-t border-slate-200">
+          {cert.pdf_url ? (
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-60"
+            >
+              {downloading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Downloading…
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download PDF
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="flex items-center justify-center gap-2 py-2 text-xs text-amber-600">
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Generating PDF…
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CertificatesPage() {
+  const { user } = useAppSelector((s) => s.auth);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  // polling: if any cert has no pdf_url yet, keep polling
+  const [polling, setPolling] = useState(false);
+
+  const fetchCerts = useCallback(async () => {
+    try {
+      const { data } = await apiClient.get('/me/certificates');
+      setCertificates(data);
+      // If any cert is still pending PDF, start/continue polling
+      const hasPending = data.some((c: Certificate) => !c.pdf_url);
+      setPolling(hasPending);
+      return data;
+    } catch (err) {
+      console.error('Failed to fetch certificates', err);
+      return [];
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    if (!user || user.role === 'teacher') {
+      setIsLoading(false);
+      return;
+    }
+    fetchCerts().finally(() => setIsLoading(false));
+  }, [user, fetchCerts]);
+
+  // Polling loop — check every 3s if any cert is still being generated
+  useEffect(() => {
+    if (!polling) return;
+    const interval = setInterval(async () => {
+      const data = await fetchCerts();
+      if (!data.some((c: Certificate) => !c.pdf_url)) {
+        clearInterval(interval);
+        setPolling(false);
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [polling, fetchCerts]);
 
   if (user?.role === 'teacher') {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-slate-900 ">Certificates Module</h2>
-        <p className="mt-2 text-slate-600 ">
-          Teachers do not earn certificates. You can view student certificates from individual student profiles.
-        </p>
+      <div className="space-y-6">
+        <header>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Certificates</h1>
+        </header>
+        <div className="text-center py-20 bg-white rounded-2xl ring-1 ring-slate-200">
+          <div className="text-6xl mb-4">🏅</div>
+          <h2 className="text-xl font-bold text-slate-800">Certificates are for students</h2>
+          <p className="mt-2 text-slate-500 max-w-sm mx-auto">
+            Students earn certificates when they complete your courses.
+            Track their progress from the Students page.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 ">
-          My Certificates
-        </h1>
-        <p className="mt-2 text-sm text-slate-600 ">
-          View and download your earned certificates for completed courses.
-        </p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">My Certificates</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Download your earned certificates for completed courses.
+          </p>
+        </div>
+        {polling && (
+          <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg ring-1 ring-amber-200">
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Generating PDFs…
+          </div>
+        )}
       </header>
 
       {isLoading ? (
-        <div className="py-12 flex justify-center">
-          <div className="animate-pulse flex space-x-4">
-            <div className="rounded-full bg-slate-200 h-10 w-10"></div>
-            <div className="flex-1 space-y-6 py-1 w-48">
-              <div className="h-2 bg-slate-200 rounded"></div>
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="h-2 bg-slate-200 rounded col-span-2"></div>
-                  <div className="h-2 bg-slate-200 rounded col-span-1"></div>
-                </div>
-                <div className="h-2 bg-slate-200 rounded"></div>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-64 bg-slate-200 animate-pulse rounded-2xl" />
+          ))}
         </div>
       ) : certificates.length === 0 ? (
-        <div className="text-center py-12 text-slate-500 border-2 border-dashed border-slate-200 rounded-xl">
-          You haven't earned any certificates yet.
+        <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500">
+          <div className="text-5xl mb-4">📜</div>
+          <p className="font-medium text-base">No certificates yet</p>
+          <p className="text-sm mt-1">Complete a course to earn your first certificate!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {certificates.map((cert) => (
-            <div key={cert.id} className="bg-white rounded-2xl p-6 shadow-sm ring-1 ring-slate-200 flex flex-col items-center text-center">
-              <div className="h-20 w-20 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-amber-500/30">
-                <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-              </div>
-
-              <h3 className="text-lg font-bold text-slate-900 line-clamp-2 min-h-[3.5rem]">
-                {cert.course_title || `Course ID: ${cert.course_id}`}
-              </h3>
-
-              <p className="text-sm text-slate-500 mt-2">
-                Issued: {new Date(cert.issued_at).toLocaleDateString()}
-              </p>
-              <p className="text-xs text-slate-400 mt-1 font-mono">
-                ID: {cert.verification_code}
-              </p>
-
-              <div className="mt-6 flex w-full gap-3">
-                <a 
-                  href={`http://localhost:3001${cert.pdf_url}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex-1"
-                >
-                  <Button variant="primary" className="w-full">
-                    Download PDF
-                  </Button>
-                </a>
-              </div>
-            </div>
+            <CertificateCard key={cert.id} cert={cert} />
           ))}
         </div>
       )}

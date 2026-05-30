@@ -42,6 +42,9 @@ export default function DashboardLayout({
   const teacherNavItems = [
     { name: 'Dashboard', href: '/dashboard' },
     { name: 'Manage Courses', href: '/dashboard/courses' },
+    { name: 'All Students', href: '/dashboard/students' },
+    { name: 'Reviews', href: '/dashboard/reviews' },
+    { name: 'Grading', href: '/dashboard/grading' },
     { name: 'Students & Analytics', href: '/dashboard/analytics' },
     { name: 'Profile', href: '/dashboard/profile' },
   ];

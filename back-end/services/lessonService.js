@@ -12,8 +12,16 @@ export class LessonService {
         if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
+        // available_from and deadline are REQUIRED
+        if (!data.available_from) throw new Error('available_from is required');
+        if (!data.deadline) throw new Error('deadline is required');
         const maxOrder = await this.lessonModel.getMaxOrderIndex(moduleId);
-        return this.lessonModel.create({ ...data, moduleId, orderIndex: maxOrder + 1 });
+        return this.lessonModel.create({
+            ...data,
+            contentType: data.content_type || data.contentType,
+            moduleId,
+            orderIndex: maxOrder + 1,
+        });
     }
 
     async getLessonsByModule(moduleId) {
@@ -21,7 +29,7 @@ export class LessonService {
     }
 
     async getLessonById(lessonId) {
-        const lesson = await this.lessonModel.findById(lessonId);
+        const lesson = await this.lessonModel.findByIdWithAuthor(lessonId);
         if (!lesson) throw new Error('Lesson not found');
         return lesson;
     }
@@ -34,7 +42,10 @@ export class LessonService {
         if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }
-        return this.lessonModel.update(lessonId, data);
+        return this.lessonModel.update(lessonId, {
+            ...data,
+            contentType: data.content_type || data.contentType,
+        });
     }
 
     async deleteLesson(lessonId, currentUserId, userRole) {

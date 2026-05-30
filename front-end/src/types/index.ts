@@ -52,6 +52,7 @@ export interface Course {
  title: string;
  description: string;
  teacher_id: number;
+ teacher_name?: string;
  created_at: string;
  updated_at: string;
 }
