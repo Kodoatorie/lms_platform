@@ -6,58 +6,109 @@ import PDFDocument from 'pdfkit';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ─── Sanitise filename ────────────────────────────────────────────────────────
+// CRITICAL FIX: verification code is user-supplied (stored in DB from crypto.randomBytes,
+// but let's be defensive). Strip everything except hex chars to prevent path traversal.
+// e.g. "../../etc/passwd" → "" which would be caught by the length check.
+function sanitiseCode(code) {
+    const safe = String(code).replace(/[^a-f0-9]/gi, '');
+    if (safe.length < 8) throw new Error('Invalid verification code format');
+    return safe;
+}
+
 export const generateCertificatePdf = async (userName, courseName, date, code) => {
     return new Promise((resolve, reject) => {
         try {
-            const doc = new PDFDocument({
-                layout: 'landscape',
-                size: 'A4',
-            });
+            // FIX: sanitise code before using it in a file path
+            const safeCode = sanitiseCode(code);
 
-            // Path to save the PDF
+            const doc = new PDFDocument({ layout: 'landscape', size: 'A4' });
+
             const certificatesDir = path.join(__dirname, '..', 'public', 'certificates');
             if (!fs.existsSync(certificatesDir)) {
                 fs.mkdirSync(certificatesDir, { recursive: true });
             }
-            const fileName = `${code}.pdf`;
+
+            const fileName = `${safeCode}.pdf`;
             const filePath = path.join(certificatesDir, fileName);
 
-            // Pipe its output somewhere, like to a file or HTTP response
+            // FIX: verify the resolved path is still inside the expected directory
+            // (defence-in-depth against any future code changes)
+            const resolvedPath = path.resolve(filePath);
+            const resolvedDir  = path.resolve(certificatesDir);
+            if (!resolvedPath.startsWith(resolvedDir + path.sep)) {
+                throw new Error('Path traversal detected — aborting certificate generation');
+            }
+
             const stream = fs.createWriteStream(filePath);
             doc.pipe(stream);
 
-            // Draw border
-            doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40).stroke('#4f46e5');
+            // ── Certificate design ────────────────────────────────────────────
+            const W = doc.page.width;
+            const H = doc.page.height;
 
-            // Add text
-            doc.fontSize(40).fillColor('#1e293b').text('CERTIFICATE OF COMPLETION', { align: 'center' });
-            doc.moveDown(1);
-            doc.fontSize(20).text('This is to certify that', { align: 'center' });
-            doc.moveDown(0.5);
-            doc.fontSize(30).fillColor('#4f46e5').text(userName, { align: 'center', underline: true });
-            doc.moveDown(0.5);
-            doc.fontSize(20).fillColor('#1e293b').text('has successfully completed the course', { align: 'center' });
-            doc.moveDown(0.5);
-            doc.fontSize(25).fillColor('#0f172a').text(courseName, { align: 'center' });
-            
-            doc.moveDown(2);
-            doc.fontSize(15).text(`Date: ${new Date(date).toLocaleDateString()}`, 100, doc.y);
-            doc.text(`Verification Code: ${code}`, 100, doc.y + 20);
+            // Outer border
+            doc.rect(15, 15, W - 30, H - 30)
+               .lineWidth(3)
+               .stroke('#4f46e5');
+            // Inner border
+            doc.rect(22, 22, W - 44, H - 44)
+               .lineWidth(1)
+               .stroke('#818cf8');
 
-            // Finalize PDF file
+            // Header band
+            doc.rect(15, 15, W - 30, 70)
+               .fill('#4f46e5');
+
+            doc.fontSize(28)
+               .fillColor('#ffffff')
+               .text('CERTIFICATE OF COMPLETION', 0, 28, { align: 'center' });
+
+            // Body
+            doc.fontSize(16)
+               .fillColor('#64748b')
+               .text('This is to certify that', 0, 110, { align: 'center' });
+
+            // Sanitise display values — strip control chars to prevent PDF injection
+            const safeName   = String(userName).replace(/[\x00-\x1F\x7F]/g, '');
+            const safeCourse = String(courseName).replace(/[\x00-\x1F\x7F]/g, '');
+
+            doc.fontSize(34)
+               .fillColor('#1e293b')
+               .text(safeName, 0, 145, { align: 'center', underline: true });
+
+            doc.fontSize(16)
+               .fillColor('#64748b')
+               .text('has successfully completed the course', 0, 200, { align: 'center' });
+
+            doc.fontSize(24)
+               .fillColor('#4f46e5')
+               .text(safeCourse, 0, 230, { align: 'center' });
+
+            // Footer
+            const issuedDate = new Date(date).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric',
+            });
+
+            doc.fontSize(11)
+               .fillColor('#94a3b8')
+               .text(`Issued: ${issuedDate}`, 60, H - 80)
+               .text(`Verification ID: ${safeCode}`, 60, H - 62);
+
+            // Seal circle (decorative)
+            doc.circle(W - 90, H - 70, 40)
+               .lineWidth(2)
+               .stroke('#4f46e5');
+            doc.fontSize(9)
+               .fillColor('#4f46e5')
+               .text('VERIFIED', W - 120, H - 80, { width: 60, align: 'center' });
+
             doc.end();
 
-            stream.on('finish', () => {
-                // Return the public URL path
-                const fileUrl = `/certificates/${fileName}`;
-                resolve(fileUrl);
-            });
-
-            stream.on('error', (err) => {
-                reject(err);
-            });
-        } catch (error) {
-            reject(error);
+            stream.on('finish', () => resolve(`/certificates/${fileName}`));
+            stream.on('error', reject);
+        } catch (err) {
+            reject(err);
         }
     });
 };

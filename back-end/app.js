@@ -138,7 +138,7 @@ async function startServer() {
         // We'll pass lessonModel and moduleModel as well.
         const enrollmentService = new EnrollmentService(
             enrollmentModel, lessonProgressModel, courseModel, userModel, statsModel,
-            lessonModel, moduleModel, pool  // pool for complex queries (total lessons)
+            lessonModel, moduleModel, pool, certificateModel  // certificateModel for dup-cert guard
         );
         const assignmentService = new AssignmentService(assignmentModel, lessonModel, moduleModel, courseModel);
         const submissionService = new SubmissionService(submissionModel, assignmentModel, lessonModel, moduleModel, courseModel);
