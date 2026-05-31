@@ -10,11 +10,12 @@ import {
 export const createAuthRouter = (authController) => {
     const router = Router();
 
+    // authLimiter now applied to ALL four auth mutation endpoints — not just login
     router.post('/register', authLimiter, validateRegister, authController.register);
     router.post('/login',    authLimiter, validateLogin,    authController.login);
-    router.post('/logout',   authController.logout);
-    router.post('/refresh',  validateRefresh, authController.refresh);
-    router.get('/me',        authMiddleware,  authController.me);
+    router.post('/logout',   authLimiter, authController.logout);
+    router.post('/refresh',  authLimiter, validateRefresh,  authController.refresh);
+    router.get('/me',        authMiddleware, authController.me);
 
     return router;
 };

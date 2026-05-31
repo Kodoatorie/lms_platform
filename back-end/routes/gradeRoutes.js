@@ -7,9 +7,20 @@ export const createGradeRouter = (gradeController) => {
     const router = Router();
     router.use(authMiddleware);
 
-    router.post('/submissions/:submissionId/grade',     roleMiddleware(['teacher']), validateGrade, gradeController.grade);
-    router.get('/submissions/:submissionId/grade',      gradeController.getGrade);
-    router.get('/courses/:courseId/submissions',        roleMiddleware(['teacher']), gradeController.getCourseSubmissions);
+    // Teacher: grade a submission
+    router.post('/submissions/:submissionId/grade',
+        roleMiddleware(['teacher']), validateGrade, gradeController.grade);
+
+    // Get single grade
+    router.get('/submissions/:submissionId/grade', gradeController.getGrade);
+
+    // Teacher: all submissions for a course
+    router.get('/courses/:courseId/submissions',
+        roleMiddleware(['teacher']), gradeController.getCourseSubmissions);
+
+    // Student: their own grades and pending submissions
+    router.get('/me/grades',         roleMiddleware(['student']), gradeController.getMyGrades);
+    router.get('/me/grades/pending', roleMiddleware(['student']), gradeController.getMyPending);
 
     return router;
 };

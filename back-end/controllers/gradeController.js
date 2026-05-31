@@ -8,7 +8,7 @@ export class GradeController {
             const { submissionId } = req.params;
             const { score, feedback } = req.body;
             const grade = await this.gradeService.gradeSubmission(
-                submissionId, score, feedback, req.user.id, req.user.role
+                submissionId, score, feedback, req.user.id
             );
             res.json(grade);
         } catch (err) { next(err); }
@@ -21,13 +21,26 @@ export class GradeController {
         } catch (err) { next(err); }
     };
 
-    // GET /api/courses/:courseId/submissions — all submissions for grading
     getCourseSubmissions = async (req, res, next) => {
         try {
-            const submissions = await this.gradeService.getCourseSubmissions(
-                req.params.courseId, req.user.id, req.user.role
-            );
+            const submissions = await this.gradeService.getCourseSubmissions(req.params.courseId);
             res.json(submissions);
+        } catch (err) { next(err); }
+    };
+
+    // GET /api/me/grades — student views all their own graded work
+    getMyGrades = async (req, res, next) => {
+        try {
+            const grades = await this.gradeService.getMyGrades(req.user.id);
+            res.json(grades);
+        } catch (err) { next(err); }
+    };
+
+    // GET /api/me/grades/pending — student views ungraded submissions
+    getMyPending = async (req, res, next) => {
+        try {
+            const pending = await this.gradeService.getMyPending(req.user.id);
+            res.json(pending);
         } catch (err) { next(err); }
     };
 }

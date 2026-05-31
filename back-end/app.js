@@ -45,6 +45,7 @@ import { AnalyticsService } from './services/analyticsService.js';
 import { UserService } from './services/userService.js';
 import { ProctoringService } from './services/proctoringService.js';
 import { ReviewService } from './services/reviewService.js';
+import { NotificationService } from './services/notificationService.js';
 
 // Controllers
 import { AuthController } from './controllers/authController.js';
@@ -77,6 +78,7 @@ import { createUserRouter } from './routes/userRoutes.js';
 import { createProctoringRouter } from './routes/proctoringRoutes.js';
 import { createReviewRouter } from './routes/reviewRoutes.js';
 import { createStudentRouter } from './routes/studentRoutes.js';
+import { createNotificationRouter } from './routes/notificationRoutes.js';
 
 
 dotenv.config();
@@ -151,6 +153,7 @@ async function startServer() {
         const analyticsService = new AnalyticsService(statsModel, enrollmentModel, gradeModel, assignmentModel, courseModel);
         const userService = new UserService(studentProfileModel, teacherProfileModel);
         const proctoringService = new ProctoringService(proctoringModel);
+        const notificationService = new NotificationService(pool);
 
         // Controllers
         const authController = new AuthController(authService);
@@ -188,6 +191,7 @@ app.use('/api', createCertificateRouter(certificateController));
 app.use('/api', createAnalyticsRouter(analyticsController));
 app.use('/api', createUserRouter(userController));
 app.use('/api', createProctoringRouter(proctoringController));
+app.use('/api/notifications', createNotificationRouter(notificationService));
 
         // Health check
         app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
