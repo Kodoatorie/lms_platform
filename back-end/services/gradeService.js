@@ -1,5 +1,5 @@
 export class GradeService {
-    constructor(gradeModel, submissionModel, assignmentModel, statsModel, lessonModel, moduleModel, notificationService) {
+    constructor(gradeModel, submissionModel, assignmentModel, statsModel, lessonModel, moduleModel, notificationService, courseModel) {
         this.gradeModel          = gradeModel;
         this.submissionModel     = submissionModel;
         this.assignmentModel     = assignmentModel;
@@ -7,13 +7,25 @@ export class GradeService {
         this.lessonModel         = lessonModel;
         this.moduleModel         = moduleModel;
         this.notificationService = notificationService || null;
+        this.courseModel         = courseModel || null;
     }
 
-    async gradeSubmission(submissionId, score, feedback, gradedById) {
+    async gradeSubmission(submissionId, score, feedback, gradedById, graderRole) {
         const submission = await this.submissionModel.findById(submissionId);
         if (!submission) throw new Error('Submission not found');
         const assignment = await this.assignmentModel.findById(submission.assignment_id);
         if (!assignment) throw new Error('Assignment not found');
+
+        // Verify the teacher is the course author
+        if (graderRole !== 'admin') {
+            const lesson  = await this.lessonModel?.findById(assignment.lesson_id);
+            const module  = await this.moduleModel?.findById(lesson?.module_id);
+            const course  = await this.courseModel?.findById(module?.course_id);
+            if (!course || Number(course.teacher_id) !== Number(gradedById)) {
+                throw new Error('Not authorized: only the course author can grade submissions');
+            }
+        }
+
         if (Number(score) > Number(assignment.max_score)) {
             throw new Error(`Score ${score} exceeds max score of ${assignment.max_score}`);
         }

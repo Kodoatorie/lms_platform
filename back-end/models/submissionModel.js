@@ -3,11 +3,11 @@ export class SubmissionModel {
         this.pool = pool;
     }
 
-    async create({ assignmentId, userId, content }) {
+    async create({ assignmentId, userId, content, googleDriveLink }) {
         const result = await this.pool.query(
-            `INSERT INTO submissions (assignment_id, user_id, content)
-             VALUES ($1, $2, $3) RETURNING *`,
-            [assignmentId, userId, content]
+            `INSERT INTO submissions (assignment_id, user_id, content, google_drive_link)
+             VALUES ($1, $2, $3, $4) RETURNING *`,
+            [assignmentId, userId, content || null, googleDriveLink || null]
         );
         return result.rows[0];
     }

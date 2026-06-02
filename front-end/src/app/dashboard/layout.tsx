@@ -1,13 +1,29 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { fetchCurrentUser, logoutUser } from '../../store/auth/authSlice';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
+import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
 import apiClient from '../../lib/api/client';
 import { APP_NAME } from '../../lib/constants';
+import {
+  Home,
+  BookOpen,
+  Target,
+  Bell,
+  Award,
+  Star,
+  User,
+  Users,
+  Edit3,
+  BarChart,
+  LogOut,
+  Menu,
+  X,
+} from 'lucide-react';
 
 interface Notification {
   id: number;
@@ -21,6 +37,8 @@ function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
@@ -36,10 +54,25 @@ function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll every 30s for new notifications
     const interval = setInterval(fetchNotifications, 30_000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  // Закрытие при клике вне
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -51,25 +84,26 @@ function NotificationBell() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-9 h-9">
       <button
+        ref={buttonRef}
         onClick={() => { setOpen((o) => !o); if (!open) fetchNotifications(); }}
-        className="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+        className="absolute inset-0 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
         aria-label="Notifications"
       >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
+        <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-50 w-80 bg-white rounded-2xl shadow-xl ring-1 ring-slate-200 overflow-hidden">
+        <div
+          ref={dropdownRef}
+          className="absolute right-0 top-full mt-2 z-50 w-screen max-w-[calc(100vw-2rem)] sm:w-80 bg-white rounded-2xl shadow-xl ring-1 ring-slate-200 overflow-hidden origin-top-right"
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
             <h3 className="font-semibold text-sm text-slate-900">Notifications</h3>
             {unreadCount > 0 && (
@@ -84,7 +118,10 @@ function NotificationBell() {
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600 mx-auto" />
               </div>
             ) : notifications.length === 0 ? (
-              <div className="p-6 text-center text-sm text-slate-500">No notifications yet</div>
+              <div className="p-6 text-center text-sm text-slate-500">
+                <Bell className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                No notifications yet
+              </div>
             ) : (
               notifications.map((n) => (
                 <div key={n.id} className={`px-4 py-3 text-sm ${n.is_read ? 'opacity-60' : 'bg-indigo-50/50'}`}>
@@ -123,27 +160,56 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/login');
   };
 
+  // Иконки для пунктов меню (lucide)
+  const getIcon = (name: string) => {
+    switch (name) {
+      case 'Dashboard': return <Home className="w-5 h-5" />;
+      case 'Courses': return <BookOpen className="w-5 h-5" />;
+      case 'My Grades': return <Target className="w-5 h-5" />;
+      case 'Notifications': return <Bell className="w-5 h-5" />;
+      case 'Certificates': return <Award className="w-5 h-5" />;
+      case 'Reviews': return <Star className="w-5 h-5" />;
+      case 'Profile': return <User className="w-5 h-5" />;
+      case 'Manage Courses': return <BookOpen className="w-5 h-5" />;
+      case 'Grading': return <Edit3 className="w-5 h-5" />;
+      case 'Students': return <Users className="w-5 h-5" />;
+      case 'Analytics': return <BarChart className="w-5 h-5" />;
+      default: return <Home className="w-5 h-5" />;
+    }
+  };
+
   const studentNav = [
-    { name: 'Dashboard',       href: '/dashboard',                icon: '🏠' },
-    { name: 'Courses',         href: '/dashboard/courses',        icon: '📚' },
-    { name: 'My Grades',       href: '/dashboard/grades',         icon: '🎯' },
-    { name: 'Notifications',   href: '/dashboard/notifications',  icon: '🔔' },
-    { name: 'Certificates',    href: '/dashboard/certificates',   icon: '🏅' },
-    { name: 'Reviews',         href: '/dashboard/reviews',        icon: '⭐' },
-    { name: 'Profile',         href: '/dashboard/profile',        icon: '👤' },
+    { name: 'Dashboard',       href: '/dashboard' },
+    { name: 'Courses',         href: '/dashboard/courses' },
+    { name: 'My Grades',       href: '/dashboard/grades' },
+    { name: 'Notifications',   href: '/dashboard/notifications' },
+    { name: 'Certificates',    href: '/dashboard/certificates' },
+    { name: 'Reviews',         href: '/dashboard/reviews' },
+    { name: 'Profile',         href: '/dashboard/profile' },
   ];
 
   const teacherNav = [
-    { name: 'Dashboard',          href: '/dashboard',             icon: '🏠' },
-    { name: 'Manage Courses',     href: '/dashboard/courses',     icon: '📚' },
-    { name: 'Grading',            href: '/dashboard/grading',     icon: '✏️' },
-    { name: 'Students',           href: '/dashboard/students',    icon: '👥' },
-    { name: 'Analytics',          href: '/dashboard/analytics',   icon: '📊' },
-    { name: 'Reviews',            href: '/dashboard/reviews',     icon: '⭐' },
-    { name: 'Profile',            href: '/dashboard/profile',     icon: '👤' },
+    { name: 'Dashboard',          href: '/dashboard' },
+    { name: 'Manage Courses',     href: '/dashboard/courses' },
+    { name: 'Grading',            href: '/dashboard/grading' },
+    { name: 'Students',           href: '/dashboard/students' },
+    { name: 'Analytics',          href: '/dashboard/analytics' },
+    { name: 'Reviews',            href: '/dashboard/reviews' },
+    { name: 'Profile',            href: '/dashboard/profile' },
   ];
 
   const navItems = user?.role === 'teacher' ? teacherNav : studentNav;
+
+  // Функция проверки активности пункта меню
+  const isLinkActive = (href: string) => {
+    if (href === '/dashboard') {
+      // Корневая страница дашборда активна только при точном совпадении
+      return pathname === '/dashboard';
+    }
+    // Для всех остальных: точное совпадение или начало с href + '/'
+    // (например, /dashboard/students или /dashboard/students/123)
+    return pathname === href || pathname.startsWith(href + '/');
+  };
 
   if (isLoading && !user) {
     return (
@@ -158,30 +224,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
 
-      {/* ── Mobile header ── */}
+      {/* Mobile header */}
       <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-30">
         <span className="font-bold text-xl text-indigo-600">{APP_NAME}</span>
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           <NotificationBell />
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
             aria-label="Toggle menu"
           >
-            {isSidebarOpen ? (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
+            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
-      {/* ── Sidebar — mobile overlay + desktop fixed ── */}
       {/* Overlay backdrop (mobile only) */}
       {isSidebarOpen && (
         <div
@@ -190,36 +248,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
       )}
 
+      {/* Sidebar */}
       <aside className={`
         fixed md:relative top-0 left-0 h-full md:h-auto
         w-64 bg-white border-r border-slate-200 flex-shrink-0
         flex flex-col z-30 transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        {/* Logo */}
+        {/* Logo + language + notifications (desktop) */}
         <div className="p-6 hidden md:flex items-center justify-between">
           <span className="font-extrabold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
             {APP_NAME}
           </span>
-          <NotificationBell />
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <NotificationBell />
+          </div>
         </div>
 
-        {/* Nav */}
+        {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            const active = isLinkActive(item.href);
             return (
               <Link
                 key={item.name}
                 href={item.href}
                 onClick={() => setIsSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
+                  active
                     ? 'bg-indigo-50 text-indigo-700'
                     : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <span className="text-base">{item.icon}</span>
+                {getIcon(item.name)}
                 {item.name}
               </Link>
             );
@@ -239,14 +301,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
           >
+            <LogOut className="w-4 h-4" />
             Sign out
           </button>
         </div>
       </aside>
 
-      {/* ── Main content — wrapped in ErrorBoundary ── */}
+      {/* Main content */}
       <main className="flex-1 overflow-y-auto min-w-0">
         <div className="p-4 md:p-8">
           <ErrorBoundary context="Dashboard">

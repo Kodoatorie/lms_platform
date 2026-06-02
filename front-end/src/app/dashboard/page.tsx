@@ -1,125 +1,503 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import {
+  BookOpen, Users, BarChart3, CheckCircle2,
+  Star, Clock, TrendingUp, Award, ChevronRight,
+  GraduationCap, ClipboardList, Loader2, AlertCircle,
+  Target, Zap,
+} from 'lucide-react';
 import { useAppSelector } from '../../store/hooks';
+import apiClient from '../../lib/api/client';
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+interface UserStats {
+  total_courses: number;
+  completed_courses: number;
+  average_score: number;
+  total_assignments?: number;
+  submitted_assignments?: number;
+}
+
+interface EnrolledCourse {
+  course_id: number;
+  course_title: string;
+  progress_pct: number | null;
+  enrolled_at: string;
+  completed: boolean;
+}
+
+interface TeacherCourse {
+  id: number;
+  title: string;
+  description?: string;
+  student_count?: number;
+  avg_score?: number | null;
+  created_at: string;
+}
+
+interface PendingSubmission {
+  submission_id: number;
+  assignment_title: string;
+  lesson_title: string;
+  course_title: string;
+  course_id: number;
+  submitted_at: string;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  color,
+  loading,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  sub?: string;
+  color: 'indigo' | 'green' | 'purple' | 'amber' | 'sky';
+  loading?: boolean;
+}) {
+  const colorMap = {
+    indigo: 'bg-indigo-500/10 text-indigo-600',
+    green:  'bg-emerald-500/10 text-emerald-600',
+    purple: 'bg-purple-500/10 text-purple-600',
+    amber:  'bg-amber-500/10 text-amber-600',
+    sky:    'bg-sky-500/10 text-sky-600',
+  };
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 hover:shadow-md transition-all">
+      <div className="flex items-start justify-between">
+        <div className={`rounded-xl p-3 ${colorMap[color]}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+      <div className="mt-4">
+        {loading ? (
+          <div className="h-8 w-16 bg-slate-200 animate-pulse rounded-lg" />
+        ) : (
+          <p className="text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
+        )}
+        <p className="mt-1 text-sm font-medium text-slate-500">{label}</p>
+        {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function ProgressBar({ pct }: { pct: number }) {
+  const clamped = Math.min(100, Math.max(0, pct));
+  return (
+    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+      <div
+        className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-700"
+        style={{ width: `${clamped}%` }}
+      />
+    </div>
+  );
+}
+
+function EmptyState({ icon: Icon, title, sub, href, linkLabel }: {
+  icon: React.ElementType; title: string; sub: string; href?: string; linkLabel?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+        <Icon className="w-6 h-6 text-slate-400" />
+      </div>
+      <p className="font-semibold text-slate-700">{title}</p>
+      <p className="text-sm text-slate-400 mt-1">{sub}</p>
+      {href && linkLabel && (
+        <Link href={href}
+          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-500">
+          {linkLabel} <ChevronRight className="w-4 h-4" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// ── Teacher dashboard ────────────────────────────────────────────────────────
+
+function TeacherDashboard({ userId }: { userId: number }) {
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [courses, setCourses] = useState<TeacherCourse[]>([]);
+  const [pending, setPending] = useState<PendingSubmission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [statsRes, coursesRes] = await Promise.all([
+          apiClient.get('/analytics/me'),
+          apiClient.get(`/courses?teacherId=${userId}`),
+        ]);
+        setStats(statsRes.data);
+        const myCourses: TeacherCourse[] = coursesRes.data;
+        setCourses(myCourses);
+
+        // Fetch per-course analytics for student counts
+        const courseDetails = await Promise.allSettled(
+          myCourses.slice(0, 6).map((c) =>
+            apiClient.get(`/analytics/courses/${c.id}`).then(({ data }) => ({
+              id: c.id,
+              student_count: data.students?.length ?? 0,
+              avg_score: data.stats?.avg_score ?? null,
+            }))
+          )
+        );
+        const detailMap: Record<number, { student_count: number; avg_score: number | null }> = {};
+        courseDetails.forEach((r) => {
+          if (r.status === 'fulfilled') detailMap[r.value.id] = r.value;
+        });
+        setCourses((prev) =>
+          prev.map((c) => ({ ...c, ...(detailMap[c.id] ?? {}) }))
+        );
+
+        // Pending (ungraded) submissions across teacher's courses
+        const subArrays = await Promise.allSettled(
+          myCourses.slice(0, 6).map((c) =>
+            apiClient.get(`/courses/${c.id}/submissions`).then(({ data }) =>
+              (data as any[])
+                .filter((s: any) => s.grade_id === null || s.score === null || s.score === undefined)
+                .map((s: any) => ({ ...s, course_title: c.title, course_id: c.id }))
+            )
+          )
+        );
+        const allPending: PendingSubmission[] = [];
+        subArrays.forEach((r) => {
+          if (r.status === 'fulfilled') allPending.push(...r.value);
+        });
+        setPending(allPending.slice(0, 5));
+      } catch (err: any) {
+        setError(err.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [userId]);
+
+  const totalStudents = courses.reduce((s, c) => s + (c.student_count ?? 0), 0);
+  const avgCompletion = stats
+    ? stats.total_courses > 0
+      ? Math.round((stats.completed_courses / stats.total_courses) * 100)
+      : 0
+    : 0;
+
+  if (error) {
+    return (
+      <div className="flex items-center gap-2 bg-red-50 text-red-700 rounded-2xl px-5 py-4 text-sm ring-1 ring-red-200">
+        <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard icon={Users}       label="Total Students"      value={loading ? '—' : totalStudents}                     color="indigo" loading={loading} />
+        <StatCard icon={BookOpen}    label="Active Courses"       value={loading ? '—' : courses.length}                   color="green"  loading={loading} />
+        <StatCard icon={BarChart3}   label="Avg Completion Rate"  value={loading ? '—' : `${avgCompletion}%`}               color="purple" loading={loading} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Courses list */}
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 className="text-base font-semibold text-slate-900">Your Courses</h2>
+            <Link href="/dashboard/manage-courses"
+              className="text-xs text-indigo-600 hover:text-indigo-500 font-medium flex items-center gap-0.5">
+              Manage <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="p-6 space-y-3">
+              {[1,2,3].map((i) => <div key={i} className="h-14 bg-slate-100 animate-pulse rounded-xl" />)}
+            </div>
+          ) : courses.length === 0 ? (
+            <EmptyState icon={BookOpen} title="No courses yet"
+              sub="Create your first course to get started."
+              href="/dashboard/manage-courses" linkLabel="Create course" />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {courses.slice(0, 6).map((course) => (
+                <li key={course.id}>
+                  <Link href={`/dashboard/courses/${course.id}`}
+                    className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      {course.title.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">{course.title}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {course.student_count != null ? `${course.student_count} students` : 'Loading…'}
+                        {course.avg_score != null && ` · avg ${course.avg_score.toFixed(0)}%`}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Pending submissions */}
+        <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 className="text-base font-semibold text-slate-900">Pending Reviews</h2>
+            <Link href="/dashboard/grading"
+              className="text-xs text-indigo-600 hover:text-indigo-500 font-medium flex items-center gap-0.5">
+              All <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="p-6 space-y-3">
+              {[1,2,3].map((i) => <div key={i} className="h-12 bg-slate-100 animate-pulse rounded-xl" />)}
+            </div>
+          ) : pending.length === 0 ? (
+            <EmptyState icon={CheckCircle2} title="All caught up!"
+              sub="No submissions awaiting review." />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {pending.map((s) => (
+                <li key={s.submission_id}>
+                  <Link href="/dashboard/grading"
+                    className="flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors">
+                    <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <ClipboardList className="w-3.5 h-3.5 text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-900 truncate">{s.assignment_title}</p>
+                      <p className="text-xs text-slate-400 truncate mt-0.5">{s.course_title}</p>
+                      <p className="text-xs text-slate-300 mt-0.5">
+                        {new Date(s.submitted_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Student dashboard ────────────────────────────────────────────────────────
+
+function StudentDashboard({ userId }: { userId: number }) {
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [enrollments, setEnrollments] = useState<EnrolledCourse[]>([]);
+  const [pendingGrades, setPendingGrades] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [statsRes, enrollRes] = await Promise.all([
+          apiClient.get('/analytics/me'),
+          apiClient.get('/me/enrollments'),
+        ]);
+        setStats(statsRes.data);
+        setEnrollments(enrollRes.data);
+
+        // Pending (ungraded) submissions
+        const gradesRes = await apiClient.get('/me/grades/pending').catch(() => ({ data: [] }));
+        setPendingGrades(gradesRes.data.slice(0, 4));
+      } catch (err: any) {
+        setError(err.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [userId]);
+
+  const inProgress = enrollments.filter((e) => !e.completed);
+  const completed   = enrollments.filter((e) =>  e.completed);
+
+  if (error) {
+    return (
+      <div className="flex items-center gap-2 bg-red-50 text-red-700 rounded-2xl px-5 py-4 text-sm ring-1 ring-red-200">
+        <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={BookOpen}      label="Enrolled Courses"  value={loading ? '—' : enrollments.length}                      color="indigo" loading={loading} />
+        <StatCard icon={CheckCircle2}  label="Completed"         value={loading ? '—' : completed.length}                         color="green"  loading={loading} />
+        <StatCard icon={Zap}           label="In Progress"       value={loading ? '—' : inProgress.length}                        color="amber"  loading={loading} />
+        <StatCard icon={Target}        label="Avg Score"
+          value={loading ? '—' : stats?.average_score ? `${Number(stats.average_score).toFixed(0)}%` : '—'}
+          color="purple" loading={loading} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Continue learning */}
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 className="text-base font-semibold text-slate-900">Continue Learning</h2>
+            <Link href="/dashboard/courses"
+              className="text-xs text-indigo-600 hover:text-indigo-500 font-medium flex items-center gap-0.5">
+              All courses <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="p-6 space-y-4">
+              {[1,2,3].map((i) => <div key={i} className="h-16 bg-slate-100 animate-pulse rounded-xl" />)}
+            </div>
+          ) : inProgress.length === 0 && completed.length === 0 ? (
+            <EmptyState icon={BookOpen} title="No enrolled courses"
+              sub="Browse the catalog and start learning."
+              href="/dashboard/courses" linkLabel="Explore courses" />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {[...inProgress, ...completed.slice(0, 2)].slice(0, 6).map((enrollment) => {
+                const pct = enrollment.progress_pct ?? 0;
+                return (
+                  <li key={enrollment.course_id}>
+                    <Link
+                      href={`/dashboard/courses/${enrollment.course_id}`}
+                      className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors"
+                    >
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
+                        enrollment.completed
+                          ? 'bg-gradient-to-br from-emerald-400 to-green-600'
+                          : 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                      }`}>
+                        {enrollment.completed
+                          ? <CheckCircle2 className="w-4 h-4" />
+                          : enrollment.course_title.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-900 truncate">{enrollment.course_title}</p>
+                          <span className={`text-xs font-bold flex-shrink-0 ${
+                            enrollment.completed ? 'text-emerald-600' : 'text-indigo-600'
+                          }`}>{Math.round(pct)}%</span>
+                        </div>
+                        <div className="mt-1.5">
+                          <ProgressBar pct={pct} />
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {enrollment.completed ? 'Completed ✓' : `${Math.round(pct)}% complete`}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {/* Awaiting grades */}
+        <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 className="text-base font-semibold text-slate-900">Awaiting Grades</h2>
+            <Link href="/dashboard/grades"
+              className="text-xs text-indigo-600 hover:text-indigo-500 font-medium flex items-center gap-0.5">
+              All grades <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="p-6 space-y-3">
+              {[1,2,3].map((i) => <div key={i} className="h-12 bg-slate-100 animate-pulse rounded-xl" />)}
+            </div>
+          ) : pendingGrades.length === 0 ? (
+            <EmptyState icon={Award} title="No pending grades"
+              sub="All your submissions have been reviewed." />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {pendingGrades.map((s, idx) => (
+                <li key={idx}>
+                  <Link href="/dashboard/grades"
+                    className="flex items-start gap-3 px-5 py-3.5 hover:bg-slate-50 transition-colors">
+                    <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-900 truncate">
+                        {s.assignment_title}
+                      </p>
+                      <p className="text-xs text-slate-400 truncate mt-0.5">{s.course_title}</p>
+                      <p className="text-xs text-slate-300 mt-0.5">
+                        {new Date(s.submitted_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
- const { user } = useAppSelector((state) => state.auth);
+  const { user, isLoading: authLoading } = useAppSelector((s) => s.auth);
 
- return (
- <div className="space-y-6">
- <header>
- <h1 className="text-3xl font-bold tracking-tight text-slate-900 ">
- Dashboard
- </h1>
- <p className="mt-2 text-sm text-slate-600 ">
- Welcome back! Here's what's happening with your courses today.
- </p>
- </header>
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
 
- {/* Stats Cards */}
- {user?.role === 'teacher' ? (
- <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
- {/* Teacher Card 1 */}
- <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
- <dt>
- <div className="absolute rounded-xl bg-indigo-500/10 p-3">
- <svg className="h-6 w-6 text-indigo-600 " fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
- <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
- </svg>
- </div>
- <p className="ml-16 truncate text-sm font-medium text-slate-500 ">Total Students</p>
- </dt>
- <dd className="ml-16 flex items-baseline pb-1">
- <p className="text-2xl font-semibold text-slate-900 ">24</p>
- </dd>
- </div>
+  if (authLoading || !user) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
 
- {/* Teacher Card 2 */}
- <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
- <dt>
- <div className="absolute rounded-xl bg-green-500/10 p-3">
- <svg className="h-6 w-6 text-green-600 " fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
- <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
- </svg>
- </div>
- <p className="ml-16 truncate text-sm font-medium text-slate-500 ">Active Courses</p>
- </dt>
- <dd className="ml-16 flex items-baseline pb-1">
- <p className="text-2xl font-semibold text-slate-900 ">3</p>
- </dd>
- </div>
+  return (
+    <div className="space-y-6">
+      <header className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+          <p className="mt-1.5 text-sm text-slate-500">
+            {greeting()}! Here's what's happening with your{' '}
+            {user.role === 'teacher' ? 'courses' : 'learning'} today.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 bg-white rounded-2xl px-4 py-2.5 shadow-sm ring-1 ring-slate-200">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+            {user.email?.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-900 leading-tight">{user.email}</p>
+            <p className="text-xs text-slate-400 capitalize leading-tight">{user.role}</p>
+          </div>
+        </div>
+      </header>
 
- {/* Teacher Card 3 */}
- <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
- <dt>
- <div className="absolute rounded-xl bg-purple-500/10 p-3">
- <svg className="h-6 w-6 text-purple-600 " fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
- <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
- </svg>
- </div>
- <p className="ml-16 truncate text-sm font-medium text-slate-500 ">Avg Completion Rate</p>
- </dt>
- <dd className="ml-16 flex items-baseline pb-1">
- <p className="text-2xl font-semibold text-slate-900 ">68%</p>
- </dd>
- </div>
- </div>
- ) : (
- <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
- {/* Card 1 */}
- <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
- <dt>
- <div className="absolute rounded-xl bg-indigo-500/10 p-3">
- <svg className="h-6 w-6 text-indigo-600 " fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
- <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
- </svg>
- </div>
- <p className="ml-16 truncate text-sm font-medium text-slate-500 ">Total Courses</p>
- </dt>
- <dd className="ml-16 flex items-baseline pb-1">
- <p className="text-2xl font-semibold text-slate-900 ">12</p>
- </dd>
- </div>
-
- {/* Card 2 */}
- <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
- <dt>
- <div className="absolute rounded-xl bg-green-500/10 p-3">
- <svg className="h-6 w-6 text-green-600 " fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
- <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
- </svg>
- </div>
- <p className="ml-16 truncate text-sm font-medium text-slate-500 ">Completed</p>
- </dt>
- <dd className="ml-16 flex items-baseline pb-1">
- <p className="text-2xl font-semibold text-slate-900 ">4</p>
- </dd>
- </div>
-
- {/* Card 3 */}
- <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
- <dt>
- <div className="absolute rounded-xl bg-purple-500/10 p-3">
- <svg className="h-6 w-6 text-purple-600 " fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
- <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
- </svg>
- </div>
- <p className="ml-16 truncate text-sm font-medium text-slate-500 ">Average Score</p>
- </dt>
- <dd className="ml-16 flex items-baseline pb-1">
- <p className="text-2xl font-semibold text-slate-900 ">92%</p>
- </dd>
- </div>
- </div>
- )}
-
- {/* Recent Activity or Courses snippet */}
- <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 ">
- <h2 className="text-lg font-semibold text-slate-900 mb-4">Continue Learning</h2>
- <div className="h-48 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-500 ">
- Course progress components will go here.
- </div>
- </div>
- </div>
- );
+      {user.role === 'teacher' ? (
+        <TeacherDashboard userId={user.id} />
+      ) : (
+        <StudentDashboard userId={user.id} />
+      )}
+    </div>
+  );
 }

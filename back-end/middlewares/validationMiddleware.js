@@ -159,11 +159,20 @@ export const validateUpdateAssignment = validate(
 // ─── Submissions ──────────────────────────────────────────────────────────────
 export const validateSubmission = validate(
     Joi.object({
-        content: Joi.string().min(1).max(50000).required().messages({
+        content: Joi.string().min(1).max(50000).allow('', null).messages({
             'string.min': 'Submission cannot be empty',
             'string.max': 'Submission is too long (max 50 000 chars)',
-            'any.required': 'content is required',
         }),
+        google_drive_link: Joi.string()
+            .uri({ scheme: ['https'] })
+            .pattern(/^https:\/\/(drive|docs)\.google\.com\//)
+            .allow('', null)
+            .messages({
+                'string.uri': 'google_drive_link must be a valid URL',
+                'string.pattern.base': 'google_drive_link must be a Google Drive or Google Docs URL',
+            }),
+    }).or('content', 'google_drive_link').messages({
+        'object.missing': 'Provide either content or a google_drive_link',
     })
 );
 
@@ -181,7 +190,7 @@ export const validateGrade = validate(
 // ─── Reviews ──────────────────────────────────────────────────────────────────
 export const validateReview = validate(
     Joi.object({
-        teacherId: Joi.number().integer().positive().required(),
+        teacherId: Joi.number().integer().positive().allow(null).optional(),
         rating: Joi.number().integer().min(1).max(5).required().messages({
             'number.min': 'Rating must be between 1 and 5',
             'number.max': 'Rating must be between 1 and 5',

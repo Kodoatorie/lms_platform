@@ -8,11 +8,13 @@ export class CourseService {
         return this.courseModel.create({ ...data, teacherId });
     }
 
-    async getCourses(teacherId, requesterRole) {
+    // FIX: search was undefined because it was never passed in — now it's the 3rd param
+    async getCourses(teacherId, requesterRole, search) {
         if (requesterRole === 'teacher' && teacherId) {
-            return this.courseModel.findAll({ teacherId });
+            return this.courseModel.findAll({ teacherId, search });
         }
-        return this.courseModel.findAll();
+        // Students see all courses but still filtered by search term
+        return this.courseModel.findAll({ search });
     }
 
     async getCourseById(courseId) {
@@ -22,14 +24,12 @@ export class CourseService {
     }
 
     async getCurriculum(courseId) {
-        return await this.courseModel.getCurriculum(courseId);
+        return this.courseModel.getCurriculum(courseId);
     }
 
     async updateCourse(courseId, updateData, userId, role) {
         const course = await this.courseModel.findById(courseId);
         if (!course) throw new Error('Course not found');
-        // FIX: JWT stores id as number but === comparison with DB integer fails
-        // Use Number() on both sides to guarantee type-safe comparison
         if (role !== 'admin' && Number(course.teacher_id) !== Number(userId)) {
             throw new Error('Not authorized');
         }
@@ -39,7 +39,6 @@ export class CourseService {
     async deleteCourse(courseId, userId, role) {
         const course = await this.courseModel.findById(courseId);
         if (!course) throw new Error('Course not found');
-        // FIX: same type coercion fix as updateCourse
         if (role !== 'admin' && Number(course.teacher_id) !== Number(userId)) {
             throw new Error('Not authorized');
         }

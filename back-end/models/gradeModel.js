@@ -48,6 +48,7 @@ export class GradeModel {
                 a.due_date,
                 s.id            AS submission_id,
                 s.content       AS submission_content,
+                s.google_drive_link,
                 s.submitted_at,
                 l.id            AS lesson_id,
                 l.title         AS lesson_title,
@@ -75,6 +76,7 @@ export class GradeModel {
             `SELECT
                 s.id            AS submission_id,
                 s.content       AS submission_content,
+                s.google_drive_link,
                 s.submitted_at,
                 a.id            AS assignment_id,
                 a.title         AS assignment_title,

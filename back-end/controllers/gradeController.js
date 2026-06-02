@@ -8,7 +8,7 @@ export class GradeController {
             const { submissionId } = req.params;
             const { score, feedback } = req.body;
             const grade = await this.gradeService.gradeSubmission(
-                submissionId, score, feedback, req.user.id
+                submissionId, score, feedback, req.user.id, req.user.role
             );
             res.json(grade);
         } catch (err) { next(err); }

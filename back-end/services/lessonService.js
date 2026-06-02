@@ -34,11 +34,12 @@ export class LessonService {
         return lesson;
     }
 
-    async updateLesson(lessonId, data, currentUserId, userRole) {
+    async updateLesson(lessonId, data, currentUserId, userRole, reqUserId) {
         const lesson = await this.lessonModel.findById(lessonId);
         if (!lesson) throw new Error('Lesson not found');
         const module = await this.moduleModel.findById(lesson.module_id);
         const course = await this.courseModel.findById(module.course_id);
+        const reqUser = await this.userModel.findById(reqUserId);
         if (userRole !== 'admin' && Number(course.teacher_id) !== Number(currentUserId)) {
             throw new Error('Not authorized');
         }

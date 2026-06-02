@@ -8,9 +8,11 @@ export class ReviewModel {
             `INSERT INTO reviews (user_id, course_id, teacher_id, rating, comment)
              VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (user_id, course_id) DO UPDATE
-             SET rating = EXCLUDED.rating, comment = EXCLUDED.comment, updated_at = NOW()
+             SET rating = EXCLUDED.rating, comment = EXCLUDED.comment,
+                 teacher_id = COALESCE(EXCLUDED.teacher_id, reviews.teacher_id),
+                 updated_at = NOW()
              RETURNING *`,
-            [userId, courseId, teacherId, rating, comment]
+            [userId, courseId, teacherId || null, rating, comment]
         );
         return result.rows[0];
     }

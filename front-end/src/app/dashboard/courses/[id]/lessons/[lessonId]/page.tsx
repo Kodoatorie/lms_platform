@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAppSelector } from '../../../../../../store/hooks';
 import { ErrorBoundary } from '../../../../../../components/ErrorBoundary';
 import apiClient from '../../../../../../lib/api/client';
+import { MarkdownEditor, MarkdownPreview } from '../../../../../../components/MarkdownEditor';
 
 type LessonError = { status: 403 | 404 | 500 | null; message: string };
 
@@ -12,6 +13,296 @@ function getYouTubeId(url: string): string | null {
   const match = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
   return match ? match[1] : null;
 }
+
+// ── Homework submission panel ────────────────────────────────────────────────
+interface Assignment {
+  id: number;
+  title: string;
+  description?: string;
+  max_score: number;
+  due_date: string | null;
+}
+
+interface ExistingSubmission {
+  id: number;
+  content: string | null;
+  google_drive_link: string | null;
+  submitted_at: string;
+  score?: number | null;
+  feedback?: string | null;
+  graded_at?: string | null;
+}
+
+function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: boolean }) {
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [submissions, setSubmissions] = useState<Record<number, ExistingSubmission>>({});
+  const [loadingHW, setLoadingHW] = useState(true);
+
+  // per-assignment form state
+  const [draftContent, setDraftContent] = useState<Record<number, string>>({});
+  const [draftLink, setDraftLink] = useState<Record<number, string>>({});
+  const [submitting, setSubmitting] = useState<number | null>(null);
+  const [errors, setErrors] = useState<Record<number, string>>({});
+  const [success, setSuccess] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    setLoadingHW(true);
+    apiClient.get(`/lessons/${lessonId}/assignments`)
+      .then(async ({ data }: { data: Assignment[] }) => {
+        setAssignments(data);
+        if (!isTeacher) {
+          // fetch my existing submission for each assignment
+          const entries = await Promise.all(
+            data.map((a) =>
+              apiClient.get(`/assignments/${a.id}/my-submission`)
+                .then(({ data: sub }) => sub ? [a.id, sub] : null)
+                .catch(() => null)
+            )
+          );
+          const map: Record<number, ExistingSubmission> = {};
+          entries.forEach((e) => { if (e) map[e[0] as number] = e[1] as ExistingSubmission; });
+          setSubmissions(map);
+        }
+      })
+      .catch(() => {}) // teacher may get 403 if not author — silently skip
+      .finally(() => setLoadingHW(false));
+  }, [lessonId, isTeacher]);
+
+  const handleSubmit = async (assignment: Assignment) => {
+    const content = draftContent[assignment.id] || '';
+    const link = draftLink[assignment.id] || '';
+
+    if (!content.trim() && !link.trim()) {
+      setErrors((p) => ({ ...p, [assignment.id]: 'Enter your answer or a Google Drive link.' }));
+      return;
+    }
+    if (link && !/^https:\/\/(drive|docs)\.google\.com\//.test(link)) {
+      setErrors((p) => ({ ...p, [assignment.id]: 'Link must be a valid Google Drive or Docs URL.' }));
+      return;
+    }
+
+    setErrors((p) => ({ ...p, [assignment.id]: '' }));
+    setSubmitting(assignment.id);
+    try {
+      await apiClient.post(`/assignments/${assignment.id}/submit`, {
+        ...(content.trim() ? { content: content.trim() } : {}),
+        ...(link.trim() ? { google_drive_link: link.trim() } : {}),
+      });
+      // refresh submission
+      const { data: sub } = await apiClient.get(`/assignments/${assignment.id}/my-submission`);
+      setSubmissions((p) => ({ ...p, [assignment.id]: sub }));
+      setSuccess((p) => ({ ...p, [assignment.id]: true }));
+      setTimeout(() => setSuccess((p) => ({ ...p, [assignment.id]: false })), 3000);
+    } catch (err: any) {
+      setErrors((p) => ({ ...p, [assignment.id]: err.response?.data?.message || 'Submission failed.' }));
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  if (loadingHW || assignments.length === 0) return null;
+
+  return (
+    <div className="mt-8 space-y-4">
+      <div className="flex items-center gap-2">
+        <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h2 className="text-lg font-bold text-slate-900">
+          Homework {assignments.length > 1 ? `(${assignments.length})` : ''}
+        </h2>
+      </div>
+
+      {assignments.map((assignment) => {
+        const existing = submissions[assignment.id];
+        const isGraded = existing && existing.score != null;
+        const isPending = existing && existing.score == null;
+        const isOverdue = assignment.due_date && new Date(assignment.due_date) < new Date();
+        const content = draftContent[assignment.id] ?? '';
+        const link = draftLink[assignment.id] ?? '';
+
+        return (
+          <div key={assignment.id} className="bg-white rounded-2xl ring-1 ring-slate-200 shadow-sm overflow-hidden">
+            {/* Assignment header */}
+            <div className="p-5 border-b border-slate-100">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <h3 className="font-semibold text-slate-900">{assignment.title}</h3>
+                  {assignment.description && (
+                    <p className="mt-1 text-sm text-slate-600">{assignment.description}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">
+                    Max: {assignment.max_score} pts
+                  </span>
+                  {assignment.due_date && (
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                      isOverdue ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      Due: {new Date(assignment.due_date).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5">
+              {/* Teacher view: show assignment info only */}
+              {isTeacher ? (
+                <p className="text-sm text-slate-500 italic">Students can submit their work here.</p>
+              ) : isGraded ? (
+                /* Already graded */
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-700 ring-1 ring-green-200">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Graded: {existing.score}/{assignment.max_score}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      {new Date(existing.graded_at!).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {existing.feedback && (
+                    <div className="bg-indigo-50 rounded-xl p-3 text-sm text-slate-700">
+                      <p className="text-xs font-semibold text-indigo-500 mb-1">Teacher feedback</p>
+                      {existing.feedback}
+                    </div>
+                  )}
+                  <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500">
+                    <p className="font-medium mb-1">Your submission:</p>
+                    {existing.google_drive_link && (
+                      <a href={existing.google_drive_link} target="_blank" rel="noopener noreferrer"
+                        className="text-indigo-500 hover:underline flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Google Drive link ↗
+                      </a>
+                    )}
+                    {existing.content && <p className="mt-1 whitespace-pre-wrap">{existing.content}</p>}
+                  </div>
+                </div>
+              ) : isPending ? (
+                /* Submitted, awaiting grade */
+                <div className="space-y-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    Submitted — awaiting review
+                  </span>
+                  <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500">
+                    <p className="font-medium mb-1">Your submission:</p>
+                    {existing.google_drive_link && (
+                      <a href={existing.google_drive_link} target="_blank" rel="noopener noreferrer"
+                        className="text-indigo-500 hover:underline flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Google Drive link ↗
+                      </a>
+                    )}
+                    {existing.content && <p className="mt-1 whitespace-pre-wrap">{existing.content}</p>}
+                    <p className="mt-1 text-slate-400">
+                      Submitted {new Date(existing.submitted_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                /* Not yet submitted */
+                <div className="space-y-3">
+                  {/* Text answer */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Written answer
+                    </label>
+                    <textarea
+                      rows={4}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                      placeholder="Type your answer here…"
+                      value={content}
+                      onChange={(e) => setDraftContent((p) => ({ ...p, [assignment.id]: e.target.value }))}
+                    />
+                  </div>
+
+                  {/* OR divider */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-slate-200" />
+                    <span className="text-xs text-slate-400 font-medium">or</span>
+                    <div className="flex-1 h-px bg-slate-200" />
+                  </div>
+
+                  {/* Google Drive link */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Google Drive link
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                      </div>
+                      <input
+                        type="url"
+                        className="w-full pl-9 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="https://drive.google.com/…"
+                        value={link}
+                        onChange={(e) => setDraftLink((p) => ({ ...p, [assignment.id]: e.target.value }))}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Make sure your file is shared with &quot;Anyone with the link&quot;.
+                    </p>
+                  </div>
+
+                  {errors[assignment.id] && (
+                    <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+                      {errors[assignment.id]}
+                    </p>
+                  )}
+                  {success[assignment.id] && (
+                    <p className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">
+                      ✅ Submitted successfully!
+                    </p>
+                  )}
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => handleSubmit(assignment)}
+                      disabled={submitting === assignment.id}
+                      className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60 transition-colors"
+                    >
+                      {submitting === assignment.id ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          Submitting…
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          </svg>
+                          Submit Homework
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 function LessonErrorState({ error, courseId }: { error: LessonError; courseId: number }) {
   if (error.status === 403) {
@@ -203,8 +494,10 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
             Author: <span className="font-medium text-slate-600">{lesson.author_name}</span>
           </p>
         )}
-        <div className="prose max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed">
-          {lesson.content || <span className="italic text-slate-400">No content provided for this lesson.</span>}
+        <div className="prose max-w-none">
+          {lesson.content
+            ? <MarkdownPreview content={lesson.content} />
+            : <span className="italic text-slate-400">No content provided for this lesson.</span>}
         </div>
       </div>
     );
@@ -380,6 +673,9 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
               <div className="flex-1 overflow-y-auto p-6 md:p-10">
                 <div className="mx-auto max-w-3xl">
                   {renderContent()}
+                  {!isLoading && lesson && (
+                    <HomeworkPanel lessonId={currentLessonId} isTeacher={isTeacher} />
+                  )}
                 </div>
               </div>
             </>

@@ -1,283 +1,1857 @@
--- ============================================================
--- 1. Перечисляемые типы (ENUM)
--- ============================================================
+--
+-- PostgreSQL database dump
+--
 
-CREATE TYPE user_role AS ENUM ('student', 'teacher', 'admin');
-CREATE TYPE enrollment_status AS ENUM ('active', 'completed', 'dropped');
-CREATE TYPE lesson_content_type AS ENUM ('video', 'text', 'practice');
-CREATE TYPE proctoring_session_status AS ENUM ('active', 'ended', 'flagged');
+\restrict N3MMe3jE0pCTXPFKx76fk1VIePHed4smgOKBbSTRDyfgiOOIIlbHUJpo0Tq4iBK
 
--- ============================================================
--- 2. Таблицы пользователей и профилей
--- ============================================================
+-- Dumped from database version 14.20 (Homebrew)
+-- Dumped by pg_dump version 14.20 (Homebrew)
 
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    role user_role NOT NULL DEFAULT 'student',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: enrollment_status; Type: TYPE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TYPE public.enrollment_status AS ENUM (
+    'active',
+    'completed',
+    'dropped'
 );
 
-CREATE TABLE student_profiles (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    full_name VARCHAR(255) NOT NULL,
-    avatar_url TEXT,
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+
+ALTER TYPE public.enrollment_status OWNER TO ilassalimov;
+
+--
+-- Name: lesson_content_type; Type: TYPE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TYPE public.lesson_content_type AS ENUM (
+    'video',
+    'text',
+    'practice'
 );
 
-CREATE TABLE teacher_profiles (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    full_name VARCHAR(255) NOT NULL,
-    bio TEXT,
-    avatar_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+
+ALTER TYPE public.lesson_content_type OWNER TO ilassalimov;
+
+--
+-- Name: proctoring_session_status; Type: TYPE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TYPE public.proctoring_session_status AS ENUM (
+    'active',
+    'ended',
+    'flagged'
 );
 
--- ============================================================
--- 3. Курсы, модули, уроки
--- ============================================================
 
-CREATE TABLE courses (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+ALTER TYPE public.proctoring_session_status OWNER TO ilassalimov;
+
+--
+-- Name: user_role; Type: TYPE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TYPE public.user_role AS ENUM (
+    'student',
+    'teacher',
+    'admin'
 );
 
-CREATE TABLE modules (
-    id SERIAL PRIMARY KEY,
-    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    order_index INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(course_id, order_index)
-);
 
-CREATE TABLE lessons (
-    id SERIAL PRIMARY KEY,
-    module_id INTEGER NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    content_type lesson_content_type NOT NULL,
-    content TEXT,
-    order_index INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(module_id, order_index)
-);
+ALTER TYPE public.user_role OWNER TO ilassalimov;
 
--- ============================================================
--- 4. Запись на курсы и прогресс
--- ============================================================
+--
+-- Name: update_updated_at_column(); Type: FUNCTION; Schema: public; Owner: ilassalimov
+--
 
-CREATE TABLE enrollments (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    status enrollment_status DEFAULT 'active',
-    progress_percent INTEGER DEFAULT 0 CHECK (progress_percent BETWEEN 0 AND 100),
-    enrolled_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_id, course_id)
-);
-
-CREATE TABLE lesson_progress (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    lesson_id INTEGER NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
-    is_completed BOOLEAN DEFAULT FALSE,
-    completed_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_id, lesson_id)
-);
-
--- ============================================================
--- 5. Домашние задания и оценки
--- ============================================================
-
-CREATE TABLE assignments (
-    id SERIAL PRIMARY KEY,
-    lesson_id INTEGER NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    max_score NUMERIC(5,2) NOT NULL CHECK (max_score > 0),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE submissions (
-    id SERIAL PRIMARY KEY,
-    assignment_id INTEGER NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,  -- текст ответа или URL файла
-    submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE grades (
-    id SERIAL PRIMARY KEY,
-    submission_id INTEGER NOT NULL UNIQUE REFERENCES submissions(id) ON DELETE CASCADE,
-    score NUMERIC(5,2) CHECK (score >= 0),
-    feedback TEXT,
-    graded_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    graded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ============================================================
--- 6. Сертификаты
--- ============================================================
-
-CREATE TABLE certificates (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    issued_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    pdf_url TEXT,
-    verification_code VARCHAR(100) NOT NULL UNIQUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_id, course_id)
-);
-
--- ============================================================
--- 7. Аналитика (агрегированные таблицы)
--- ============================================================
-
-CREATE TABLE course_stats (
-    id SERIAL PRIMARY KEY,
-    course_id INTEGER NOT NULL UNIQUE REFERENCES courses(id) ON DELETE CASCADE,
-    completion_rate NUMERIC(5,2) CHECK (completion_rate BETWEEN 0 AND 100),
-    average_score NUMERIC(5,2) CHECK (average_score >= 0),
-    active_students_count INTEGER DEFAULT 0,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE user_stats (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    total_courses INTEGER DEFAULT 0,
-    completed_courses INTEGER DEFAULT 0,
-    average_score NUMERIC(5,2) CHECK (average_score >= 0),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ============================================================
--- 8. Proctoring (наблюдение)
--- ============================================================
-
-CREATE TABLE proctoring_sessions (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    ended_at TIMESTAMP WITH TIME ZONE,
-    status proctoring_session_status DEFAULT 'active',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE proctoring_events (
-    id SERIAL PRIMARY KEY,
-    session_id INTEGER NOT NULL REFERENCES proctoring_sessions(id) ON DELETE CASCADE,
-    event_type VARCHAR(50) NOT NULL, -- face_detected, no_face, multiple_faces, tab_switch, suspicious_behavior
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ============================================================
--- 9. Токены обновления (авторизация)
--- ============================================================
-
-CREATE TABLE refresh_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash TEXT NOT NULL,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ============================================================
--- 10. Индексы для ускорения запросов
--- ============================================================
-
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
-
-CREATE INDEX idx_courses_teacher_id ON courses(teacher_id);
-
-CREATE INDEX idx_modules_course_id ON modules(course_id);
-
-CREATE INDEX idx_lessons_module_id ON lessons(module_id);
-
-CREATE INDEX idx_enrollments_user_id ON enrollments(user_id);
-CREATE INDEX idx_enrollments_course_id ON enrollments(course_id);
-CREATE INDEX idx_enrollments_status ON enrollments(status);
-
-CREATE INDEX idx_lesson_progress_user_id ON lesson_progress(user_id);
-CREATE INDEX idx_lesson_progress_lesson_id ON lesson_progress(lesson_id);
-CREATE INDEX idx_lesson_progress_completed ON lesson_progress(is_completed);
-
-CREATE INDEX idx_assignments_lesson_id ON assignments(lesson_id);
-
-CREATE INDEX idx_submissions_assignment_id ON submissions(assignment_id);
-CREATE INDEX idx_submissions_user_id ON submissions(user_id);
-
-CREATE INDEX idx_grades_submission_id ON grades(submission_id);
-CREATE INDEX idx_grades_graded_by ON grades(graded_by);
-
-CREATE INDEX idx_certificates_user_id ON certificates(user_id);
-CREATE INDEX idx_certificates_course_id ON certificates(course_id);
-CREATE INDEX idx_certificates_verification_code ON certificates(verification_code);
-
-CREATE INDEX idx_proctoring_sessions_user_id ON proctoring_sessions(user_id);
-CREATE INDEX idx_proctoring_sessions_course_id ON proctoring_sessions(course_id);
-CREATE INDEX idx_proctoring_sessions_status ON proctoring_sessions(status);
-
-CREATE INDEX idx_proctoring_events_session_id ON proctoring_events(session_id);
-CREATE INDEX idx_proctoring_events_created_at ON proctoring_events(created_at);
-
-CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
-CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
-
--- ============================================================
--- 11. Триггер для автоматического обновления updated_at
--- ============================================================
-
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+CREATE FUNCTION public.update_updated_at_column() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
-
--- Применяем триггер ко всем таблицам, имеющим updated_at
-DO $$
-DECLARE
-    t text;
-BEGIN
-    FOR t IN 
-        SELECT table_name 
-        FROM information_schema.columns 
-        WHERE column_name = 'updated_at' AND table_schema = 'public'
-    LOOP
-        EXECUTE format('
-            CREATE TRIGGER trigger_update_updated_at
-            BEFORE UPDATE ON %I
-            FOR EACH ROW
-            EXECUTE FUNCTION update_updated_at_column();
-        ', t);
-    END LOOP;
-END;
 $$;
+
+
+ALTER FUNCTION public.update_updated_at_column() OWNER TO ilassalimov;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: assignments; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.assignments (
+    id integer NOT NULL,
+    lesson_id integer NOT NULL,
+    title character varying(255) NOT NULL,
+    description text,
+    max_score numeric(5,2),
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    due_date timestamp with time zone,
+    CONSTRAINT assignments_max_score_check CHECK ((max_score > (0)::numeric))
+);
+
+
+ALTER TABLE public.assignments OWNER TO ilassalimov;
+
+--
+-- Name: assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.assignments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.assignments_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.assignments_id_seq OWNED BY public.assignments.id;
+
+
+--
+-- Name: certificates; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.certificates (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    course_id integer NOT NULL,
+    issued_at timestamp with time zone DEFAULT now(),
+    pdf_url text,
+    verification_code character varying(100) NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.certificates OWNER TO ilassalimov;
+
+--
+-- Name: certificates_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.certificates_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.certificates_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: certificates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.certificates_id_seq OWNED BY public.certificates.id;
+
+
+--
+-- Name: course_stats; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.course_stats (
+    id integer NOT NULL,
+    course_id integer NOT NULL,
+    completion_rate numeric(5,2),
+    average_score numeric(5,2),
+    active_students_count integer DEFAULT 0,
+    updated_at timestamp with time zone DEFAULT now(),
+    CONSTRAINT course_stats_average_score_check CHECK ((average_score >= (0)::numeric)),
+    CONSTRAINT course_stats_completion_rate_check CHECK (((completion_rate >= (0)::numeric) AND (completion_rate <= (100)::numeric)))
+);
+
+
+ALTER TABLE public.course_stats OWNER TO ilassalimov;
+
+--
+-- Name: course_stats_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.course_stats_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.course_stats_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: course_stats_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.course_stats_id_seq OWNED BY public.course_stats.id;
+
+
+--
+-- Name: courses; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.courses (
+    id integer NOT NULL,
+    title character varying(255) NOT NULL,
+    description text,
+    teacher_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.courses OWNER TO ilassalimov;
+
+--
+-- Name: courses_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.courses_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.courses_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: courses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.courses_id_seq OWNED BY public.courses.id;
+
+
+--
+-- Name: enrollments; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.enrollments (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    course_id integer NOT NULL,
+    status public.enrollment_status DEFAULT 'active'::public.enrollment_status,
+    progress_percent integer DEFAULT 0,
+    enrolled_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    CONSTRAINT enrollments_progress_percent_check CHECK (((progress_percent >= 0) AND (progress_percent <= 100)))
+);
+
+
+ALTER TABLE public.enrollments OWNER TO ilassalimov;
+
+--
+-- Name: enrollments_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.enrollments_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.enrollments_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: enrollments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.enrollments_id_seq OWNED BY public.enrollments.id;
+
+
+--
+-- Name: grades; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.grades (
+    id integer NOT NULL,
+    submission_id integer NOT NULL,
+    score numeric(5,2),
+    feedback text,
+    graded_by integer,
+    graded_at timestamp with time zone DEFAULT now(),
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    CONSTRAINT grades_score_check CHECK ((score >= (0)::numeric))
+);
+
+
+ALTER TABLE public.grades OWNER TO ilassalimov;
+
+--
+-- Name: grades_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.grades_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.grades_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: grades_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.grades_id_seq OWNED BY public.grades.id;
+
+
+--
+-- Name: lesson_progress; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.lesson_progress (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    lesson_id integer NOT NULL,
+    is_completed boolean DEFAULT false,
+    completed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.lesson_progress OWNER TO ilassalimov;
+
+--
+-- Name: lesson_progress_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.lesson_progress_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.lesson_progress_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: lesson_progress_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.lesson_progress_id_seq OWNED BY public.lesson_progress.id;
+
+
+--
+-- Name: lesson_revisions; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.lesson_revisions (
+    id integer NOT NULL,
+    lesson_id integer NOT NULL,
+    version integer DEFAULT 1 NOT NULL,
+    title character varying(255) NOT NULL,
+    content text,
+    content_type character varying(20) NOT NULL,
+    created_by integer,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.lesson_revisions OWNER TO ilassalimov;
+
+--
+-- Name: lesson_revisions_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.lesson_revisions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.lesson_revisions_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: lesson_revisions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.lesson_revisions_id_seq OWNED BY public.lesson_revisions.id;
+
+
+--
+-- Name: lessons; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.lessons (
+    id integer NOT NULL,
+    module_id integer NOT NULL,
+    title character varying(255) NOT NULL,
+    content_type public.lesson_content_type NOT NULL,
+    content text,
+    order_index integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    available_from timestamp with time zone,
+    deadline timestamp with time zone
+);
+
+
+ALTER TABLE public.lessons OWNER TO ilassalimov;
+
+--
+-- Name: lessons_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.lessons_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.lessons_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: lessons_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.lessons_id_seq OWNED BY public.lessons.id;
+
+
+--
+-- Name: modules; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.modules (
+    id integer NOT NULL,
+    course_id integer NOT NULL,
+    title character varying(255) NOT NULL,
+    order_index integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    is_final boolean DEFAULT false,
+    completion_message text
+);
+
+
+ALTER TABLE public.modules OWNER TO ilassalimov;
+
+--
+-- Name: modules_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.modules_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.modules_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: modules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.modules_id_seq OWNED BY public.modules.id;
+
+
+--
+-- Name: notifications; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.notifications (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    type character varying(50) NOT NULL,
+    message text NOT NULL,
+    is_read boolean DEFAULT false,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.notifications OWNER TO ilassalimov;
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.notifications_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.notifications_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
+
+
+--
+-- Name: proctoring_events; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.proctoring_events (
+    id integer NOT NULL,
+    session_id integer NOT NULL,
+    event_type character varying(50) NOT NULL,
+    metadata jsonb,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.proctoring_events OWNER TO ilassalimov;
+
+--
+-- Name: proctoring_events_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.proctoring_events_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.proctoring_events_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: proctoring_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.proctoring_events_id_seq OWNED BY public.proctoring_events.id;
+
+
+--
+-- Name: proctoring_sessions; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.proctoring_sessions (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    course_id integer NOT NULL,
+    started_at timestamp with time zone DEFAULT now(),
+    ended_at timestamp with time zone,
+    status public.proctoring_session_status DEFAULT 'active'::public.proctoring_session_status,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.proctoring_sessions OWNER TO ilassalimov;
+
+--
+-- Name: proctoring_sessions_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.proctoring_sessions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.proctoring_sessions_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: proctoring_sessions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.proctoring_sessions_id_seq OWNED BY public.proctoring_sessions.id;
+
+
+--
+-- Name: refresh_tokens; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.refresh_tokens (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    token_hash text NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.refresh_tokens OWNER TO ilassalimov;
+
+--
+-- Name: refresh_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.refresh_tokens_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.refresh_tokens_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: refresh_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.refresh_tokens_id_seq OWNED BY public.refresh_tokens.id;
+
+
+--
+-- Name: reviews; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.reviews (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    course_id integer,
+    teacher_id integer,
+    rating integer NOT NULL,
+    comment text,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    CONSTRAINT reviews_rating_check CHECK (((rating >= 1) AND (rating <= 5)))
+);
+
+
+ALTER TABLE public.reviews OWNER TO ilassalimov;
+
+--
+-- Name: reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.reviews_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.reviews_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.reviews_id_seq OWNED BY public.reviews.id;
+
+
+--
+-- Name: student_profiles; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.student_profiles (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    full_name character varying(255) NOT NULL,
+    avatar_url text,
+    metadata jsonb,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    phone_number character varying(30)
+);
+
+
+ALTER TABLE public.student_profiles OWNER TO ilassalimov;
+
+--
+-- Name: student_profiles_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.student_profiles_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.student_profiles_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: student_profiles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.student_profiles_id_seq OWNED BY public.student_profiles.id;
+
+
+--
+-- Name: submissions; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.submissions (
+    id integer NOT NULL,
+    assignment_id integer NOT NULL,
+    user_id integer NOT NULL,
+    content text NOT NULL,
+    submitted_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.submissions OWNER TO ilassalimov;
+
+--
+-- Name: submissions_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.submissions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.submissions_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: submissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.submissions_id_seq OWNED BY public.submissions.id;
+
+
+--
+-- Name: teacher_profiles; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.teacher_profiles (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    full_name character varying(255) NOT NULL,
+    bio text,
+    avatar_url text,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.teacher_profiles OWNER TO ilassalimov;
+
+--
+-- Name: teacher_profiles_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.teacher_profiles_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.teacher_profiles_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: teacher_profiles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.teacher_profiles_id_seq OWNED BY public.teacher_profiles.id;
+
+
+--
+-- Name: user_stats; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.user_stats (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    total_courses integer DEFAULT 0,
+    completed_courses integer DEFAULT 0,
+    average_score numeric(5,2),
+    updated_at timestamp with time zone DEFAULT now(),
+    CONSTRAINT user_stats_average_score_check CHECK ((average_score >= (0)::numeric))
+);
+
+
+ALTER TABLE public.user_stats OWNER TO ilassalimov;
+
+--
+-- Name: user_stats_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.user_stats_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.user_stats_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: user_stats_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.user_stats_id_seq OWNED BY public.user_stats.id;
+
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.users (
+    id integer NOT NULL,
+    email character varying(255) NOT NULL,
+    password_hash text NOT NULL,
+    role public.user_role DEFAULT 'student'::public.user_role NOT NULL,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.users OWNER TO ilassalimov;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.users_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.users_id_seq OWNER TO ilassalimov;
+
+--
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
+
+--
+-- Name: assignments id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.assignments ALTER COLUMN id SET DEFAULT nextval('public.assignments_id_seq'::regclass);
+
+
+--
+-- Name: certificates id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.certificates ALTER COLUMN id SET DEFAULT nextval('public.certificates_id_seq'::regclass);
+
+
+--
+-- Name: course_stats id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.course_stats ALTER COLUMN id SET DEFAULT nextval('public.course_stats_id_seq'::regclass);
+
+
+--
+-- Name: courses id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.courses ALTER COLUMN id SET DEFAULT nextval('public.courses_id_seq'::regclass);
+
+
+--
+-- Name: enrollments id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.enrollments ALTER COLUMN id SET DEFAULT nextval('public.enrollments_id_seq'::regclass);
+
+
+--
+-- Name: grades id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.grades ALTER COLUMN id SET DEFAULT nextval('public.grades_id_seq'::regclass);
+
+
+--
+-- Name: lesson_progress id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_progress ALTER COLUMN id SET DEFAULT nextval('public.lesson_progress_id_seq'::regclass);
+
+
+--
+-- Name: lesson_revisions id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_revisions ALTER COLUMN id SET DEFAULT nextval('public.lesson_revisions_id_seq'::regclass);
+
+
+--
+-- Name: lessons id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lessons ALTER COLUMN id SET DEFAULT nextval('public.lessons_id_seq'::regclass);
+
+
+--
+-- Name: modules id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.modules ALTER COLUMN id SET DEFAULT nextval('public.modules_id_seq'::regclass);
+
+
+--
+-- Name: notifications id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
+
+
+--
+-- Name: proctoring_events id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.proctoring_events ALTER COLUMN id SET DEFAULT nextval('public.proctoring_events_id_seq'::regclass);
+
+
+--
+-- Name: proctoring_sessions id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.proctoring_sessions ALTER COLUMN id SET DEFAULT nextval('public.proctoring_sessions_id_seq'::regclass);
+
+
+--
+-- Name: refresh_tokens id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.refresh_tokens ALTER COLUMN id SET DEFAULT nextval('public.refresh_tokens_id_seq'::regclass);
+
+
+--
+-- Name: reviews id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.reviews ALTER COLUMN id SET DEFAULT nextval('public.reviews_id_seq'::regclass);
+
+
+--
+-- Name: student_profiles id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.student_profiles ALTER COLUMN id SET DEFAULT nextval('public.student_profiles_id_seq'::regclass);
+
+
+--
+-- Name: submissions id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.submissions ALTER COLUMN id SET DEFAULT nextval('public.submissions_id_seq'::regclass);
+
+
+--
+-- Name: teacher_profiles id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.teacher_profiles ALTER COLUMN id SET DEFAULT nextval('public.teacher_profiles_id_seq'::regclass);
+
+
+--
+-- Name: user_stats id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.user_stats ALTER COLUMN id SET DEFAULT nextval('public.user_stats_id_seq'::regclass);
+
+
+--
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Name: assignments assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.assignments
+    ADD CONSTRAINT assignments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: certificates certificates_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.certificates
+    ADD CONSTRAINT certificates_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: certificates certificates_user_id_course_id_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.certificates
+    ADD CONSTRAINT certificates_user_id_course_id_key UNIQUE (user_id, course_id);
+
+
+--
+-- Name: certificates certificates_verification_code_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.certificates
+    ADD CONSTRAINT certificates_verification_code_key UNIQUE (verification_code);
+
+
+--
+-- Name: course_stats course_stats_course_id_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.course_stats
+    ADD CONSTRAINT course_stats_course_id_key UNIQUE (course_id);
+
+
+--
+-- Name: course_stats course_stats_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.course_stats
+    ADD CONSTRAINT course_stats_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: courses courses_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.courses
+    ADD CONSTRAINT courses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: enrollments enrollments_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.enrollments
+    ADD CONSTRAINT enrollments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: enrollments enrollments_user_id_course_id_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.enrollments
+    ADD CONSTRAINT enrollments_user_id_course_id_key UNIQUE (user_id, course_id);
+
+
+--
+-- Name: grades grades_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.grades
+    ADD CONSTRAINT grades_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: grades grades_submission_id_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.grades
+    ADD CONSTRAINT grades_submission_id_key UNIQUE (submission_id);
+
+
+--
+-- Name: lesson_progress lesson_progress_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_progress
+    ADD CONSTRAINT lesson_progress_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: lesson_progress lesson_progress_user_id_lesson_id_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_progress
+    ADD CONSTRAINT lesson_progress_user_id_lesson_id_key UNIQUE (user_id, lesson_id);
+
+
+--
+-- Name: lesson_revisions lesson_revisions_lesson_id_version_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_revisions
+    ADD CONSTRAINT lesson_revisions_lesson_id_version_key UNIQUE (lesson_id, version);
+
+
+--
+-- Name: lesson_revisions lesson_revisions_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_revisions
+    ADD CONSTRAINT lesson_revisions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: lessons lessons_module_id_order_index_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lessons
+    ADD CONSTRAINT lessons_module_id_order_index_key UNIQUE (module_id, order_index);
+
+
+--
+-- Name: lessons lessons_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lessons
+    ADD CONSTRAINT lessons_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: modules modules_course_id_order_index_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.modules
+    ADD CONSTRAINT modules_course_id_order_index_key UNIQUE (course_id, order_index);
+
+
+--
+-- Name: modules modules_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.modules
+    ADD CONSTRAINT modules_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: proctoring_events proctoring_events_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.proctoring_events
+    ADD CONSTRAINT proctoring_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: proctoring_sessions proctoring_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.proctoring_sessions
+    ADD CONSTRAINT proctoring_sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: refresh_tokens refresh_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.refresh_tokens
+    ADD CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reviews reviews_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.reviews
+    ADD CONSTRAINT reviews_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reviews reviews_user_id_course_id_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.reviews
+    ADD CONSTRAINT reviews_user_id_course_id_key UNIQUE (user_id, course_id);
+
+
+--
+-- Name: student_profiles student_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.student_profiles
+    ADD CONSTRAINT student_profiles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: student_profiles student_profiles_user_id_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.student_profiles
+    ADD CONSTRAINT student_profiles_user_id_key UNIQUE (user_id);
+
+
+--
+-- Name: submissions submissions_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.submissions
+    ADD CONSTRAINT submissions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: teacher_profiles teacher_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.teacher_profiles
+    ADD CONSTRAINT teacher_profiles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: teacher_profiles teacher_profiles_user_id_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.teacher_profiles
+    ADD CONSTRAINT teacher_profiles_user_id_key UNIQUE (user_id);
+
+
+--
+-- Name: user_stats user_stats_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.user_stats
+    ADD CONSTRAINT user_stats_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_stats user_stats_user_id_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.user_stats
+    ADD CONSTRAINT user_stats_user_id_key UNIQUE (user_id);
+
+
+--
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_email_key UNIQUE (email);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_assignments_lesson_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_assignments_lesson_id ON public.assignments USING btree (lesson_id);
+
+
+--
+-- Name: idx_certificates_course_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_certificates_course_id ON public.certificates USING btree (course_id);
+
+
+--
+-- Name: idx_certificates_user_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_certificates_user_id ON public.certificates USING btree (user_id);
+
+
+--
+-- Name: idx_certificates_verification_code; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_certificates_verification_code ON public.certificates USING btree (verification_code);
+
+
+--
+-- Name: idx_courses_teacher_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_courses_teacher_id ON public.courses USING btree (teacher_id);
+
+
+--
+-- Name: idx_enrollments_course_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_enrollments_course_id ON public.enrollments USING btree (course_id);
+
+
+--
+-- Name: idx_enrollments_status; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_enrollments_status ON public.enrollments USING btree (status);
+
+
+--
+-- Name: idx_enrollments_user_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_enrollments_user_id ON public.enrollments USING btree (user_id);
+
+
+--
+-- Name: idx_grades_graded_by; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_grades_graded_by ON public.grades USING btree (graded_by);
+
+
+--
+-- Name: idx_grades_submission_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_grades_submission_id ON public.grades USING btree (submission_id);
+
+
+--
+-- Name: idx_lesson_progress_completed; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_lesson_progress_completed ON public.lesson_progress USING btree (is_completed);
+
+
+--
+-- Name: idx_lesson_progress_lesson_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_lesson_progress_lesson_id ON public.lesson_progress USING btree (lesson_id);
+
+
+--
+-- Name: idx_lesson_progress_user_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_lesson_progress_user_id ON public.lesson_progress USING btree (user_id);
+
+
+--
+-- Name: idx_lesson_revisions_lesson_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_lesson_revisions_lesson_id ON public.lesson_revisions USING btree (lesson_id);
+
+
+--
+-- Name: idx_lessons_module_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_lessons_module_id ON public.lessons USING btree (module_id);
+
+
+--
+-- Name: idx_modules_course_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_modules_course_id ON public.modules USING btree (course_id);
+
+
+--
+-- Name: idx_notifications_created_at; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_notifications_created_at ON public.notifications USING btree (created_at DESC);
+
+
+--
+-- Name: idx_notifications_is_read; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_notifications_is_read ON public.notifications USING btree (is_read);
+
+
+--
+-- Name: idx_notifications_user_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_notifications_user_id ON public.notifications USING btree (user_id);
+
+
+--
+-- Name: idx_proctoring_events_created_at; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_proctoring_events_created_at ON public.proctoring_events USING btree (created_at);
+
+
+--
+-- Name: idx_proctoring_events_session_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_proctoring_events_session_id ON public.proctoring_events USING btree (session_id);
+
+
+--
+-- Name: idx_proctoring_sessions_course_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_proctoring_sessions_course_id ON public.proctoring_sessions USING btree (course_id);
+
+
+--
+-- Name: idx_proctoring_sessions_status; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_proctoring_sessions_status ON public.proctoring_sessions USING btree (status);
+
+
+--
+-- Name: idx_proctoring_sessions_user_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_proctoring_sessions_user_id ON public.proctoring_sessions USING btree (user_id);
+
+
+--
+-- Name: idx_refresh_tokens_expires_at; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_refresh_tokens_expires_at ON public.refresh_tokens USING btree (expires_at);
+
+
+--
+-- Name: idx_refresh_tokens_user_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_refresh_tokens_user_id ON public.refresh_tokens USING btree (user_id);
+
+
+--
+-- Name: idx_reviews_course_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_reviews_course_id ON public.reviews USING btree (course_id);
+
+
+--
+-- Name: idx_reviews_teacher_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_reviews_teacher_id ON public.reviews USING btree (teacher_id);
+
+
+--
+-- Name: idx_reviews_user_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_reviews_user_id ON public.reviews USING btree (user_id);
+
+
+--
+-- Name: idx_submissions_assignment_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_submissions_assignment_id ON public.submissions USING btree (assignment_id);
+
+
+--
+-- Name: idx_submissions_user_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_submissions_user_id ON public.submissions USING btree (user_id);
+
+
+--
+-- Name: idx_users_email; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_users_email ON public.users USING btree (email);
+
+
+--
+-- Name: idx_users_role; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_users_role ON public.users USING btree (role);
+
+
+--
+-- Name: assignments trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.assignments FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: course_stats trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.course_stats FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: courses trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.courses FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: enrollments trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.enrollments FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: grades trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.grades FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: lesson_progress trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.lesson_progress FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: lessons trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.lessons FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: modules trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.modules FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: proctoring_sessions trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.proctoring_sessions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: reviews trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.reviews FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: student_profiles trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.student_profiles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: submissions trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.submissions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: teacher_profiles trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.teacher_profiles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: user_stats trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.user_stats FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: users trigger_update_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER trigger_update_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: assignments assignments_lesson_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.assignments
+    ADD CONSTRAINT assignments_lesson_id_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id) ON DELETE CASCADE;
+
+
+--
+-- Name: certificates certificates_course_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.certificates
+    ADD CONSTRAINT certificates_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: certificates certificates_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.certificates
+    ADD CONSTRAINT certificates_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: course_stats course_stats_course_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.course_stats
+    ADD CONSTRAINT course_stats_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: courses courses_teacher_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.courses
+    ADD CONSTRAINT courses_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: enrollments enrollments_course_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.enrollments
+    ADD CONSTRAINT enrollments_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: enrollments enrollments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.enrollments
+    ADD CONSTRAINT enrollments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: grades grades_graded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.grades
+    ADD CONSTRAINT grades_graded_by_fkey FOREIGN KEY (graded_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: grades grades_submission_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.grades
+    ADD CONSTRAINT grades_submission_id_fkey FOREIGN KEY (submission_id) REFERENCES public.submissions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: lesson_progress lesson_progress_lesson_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_progress
+    ADD CONSTRAINT lesson_progress_lesson_id_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id) ON DELETE CASCADE;
+
+
+--
+-- Name: lesson_progress lesson_progress_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_progress
+    ADD CONSTRAINT lesson_progress_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: lesson_revisions lesson_revisions_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_revisions
+    ADD CONSTRAINT lesson_revisions_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: lesson_revisions lesson_revisions_lesson_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lesson_revisions
+    ADD CONSTRAINT lesson_revisions_lesson_id_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id) ON DELETE CASCADE;
+
+
+--
+-- Name: lessons lessons_module_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.lessons
+    ADD CONSTRAINT lessons_module_id_fkey FOREIGN KEY (module_id) REFERENCES public.modules(id) ON DELETE CASCADE;
+
+
+--
+-- Name: modules modules_course_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.modules
+    ADD CONSTRAINT modules_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: notifications notifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: proctoring_events proctoring_events_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.proctoring_events
+    ADD CONSTRAINT proctoring_events_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.proctoring_sessions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: proctoring_sessions proctoring_sessions_course_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.proctoring_sessions
+    ADD CONSTRAINT proctoring_sessions_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: proctoring_sessions proctoring_sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.proctoring_sessions
+    ADD CONSTRAINT proctoring_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: refresh_tokens refresh_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.refresh_tokens
+    ADD CONSTRAINT refresh_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reviews reviews_course_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.reviews
+    ADD CONSTRAINT reviews_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reviews reviews_teacher_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.reviews
+    ADD CONSTRAINT reviews_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: reviews reviews_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.reviews
+    ADD CONSTRAINT reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: student_profiles student_profiles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.student_profiles
+    ADD CONSTRAINT student_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: submissions submissions_assignment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.submissions
+    ADD CONSTRAINT submissions_assignment_id_fkey FOREIGN KEY (assignment_id) REFERENCES public.assignments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: submissions submissions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.submissions
+    ADD CONSTRAINT submissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: teacher_profiles teacher_profiles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.teacher_profiles
+    ADD CONSTRAINT teacher_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_stats user_stats_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.user_stats
+    ADD CONSTRAINT user_stats_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict N3MMe3jE0pCTXPFKx76fk1VIePHed4smgOKBbSTRDyfgiOOIIlbHUJpo0Tq4iBK
+

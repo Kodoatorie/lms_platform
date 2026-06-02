@@ -8,6 +8,7 @@ import { fetchCourseById, clearCurrentCourse, updateCourse, deleteCourse } from 
 import apiClient from '../../../../lib/api/client';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
+import { MarkdownEditor } from '../../../../components/MarkdownEditor';
 
 interface LessonData {
   id: number;
@@ -181,7 +182,6 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     setIsSubmittingReview(true);
     try {
       await apiClient.post(`/courses/${courseId}/reviews`, {
-        teacherId: currentCourse?.teacher_id,
         rating: reviewRating,
         comment: reviewComment,
       });
@@ -629,7 +629,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
               <label className="block text-sm font-medium text-slate-700 mb-1.5">{lessonType === 'video' ? 'YouTube URL' : 'Content'}</label>
               {lessonType === 'video'
                 ? <Input type="url" placeholder="https://www.youtube.com/watch?v=..." value={lessonContent} onChange={(e) => setLessonContent(e.target.value)} />
-                : <textarea rows={4} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value={lessonContent} onChange={(e) => setLessonContent(e.target.value)} />
+                : <MarkdownEditor value={lessonContent} onChange={setLessonContent} minHeight={280} placeholder={'# Lecture Title\n\nWrite your lecture content here…\n\n## Section\n\nUse **bold**, _italic_, `code`, lists, tables and more.'} />
               }
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -662,7 +662,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
               <label className="block text-sm font-medium text-slate-700 mb-1.5">{editLessonType === 'video' ? 'YouTube URL' : 'Content'}</label>
               {editLessonType === 'video'
                 ? <Input type="url" value={editLessonContent} onChange={(e) => setEditLessonContent(e.target.value)} />
-                : <textarea rows={4} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editLessonContent} onChange={(e) => setEditLessonContent(e.target.value)} />
+                : <MarkdownEditor value={editLessonContent} onChange={setEditLessonContent} minHeight={280} />
               }
             </div>
             <div className="grid grid-cols-2 gap-4">

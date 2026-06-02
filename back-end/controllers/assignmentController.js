@@ -16,7 +16,9 @@ export class AssignmentController {
 
     getByLesson = async (req, res, next) => {
         try {
-            const assignments = await this.assignmentService.getAssignmentsByLesson(req.params.lessonId);
+            const assignments = await this.assignmentService.getAssignmentsByLesson(
+                req.params.lessonId, req.user.id, req.user.role
+            );
             res.json(assignments);
         } catch (err) {
             next(err);

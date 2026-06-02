@@ -18,7 +18,7 @@ export class CourseController {
     getAll = async (req, res, next) => {
         try {
             const { teacherId } = req.query;
-            const courses = await this.courseService.getCourses(teacherId, req.user.role);
+            const courses = await this.courseService.getCourses(teacherId, req.user.role, req.query.search);
             res.json(courses);
         } catch (err) {
             next(err);

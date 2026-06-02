@@ -9,7 +9,10 @@ export class LessonModel {
              VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
             [moduleId, title, contentType, content, orderIndex, availableFrom || null, deadline || null]
         );
-        return result.rows[0];
+        const lesson = result.rows[0];
+        // Save initial revision v1
+        await this._saveRevision(lesson.id, { title, content, contentType, version: 1, createdBy: null });
+        return lesson;
     }
 
     async findByModule(moduleId) {
@@ -21,14 +24,18 @@ export class LessonModel {
     }
 
     async findById(id) {
-        const result = await this.pool.query(`SELECT * FROM lessons WHERE id = $1`, [id]);
+        const result = await this.pool.query(
+            `SELECT * FROM lessons WHERE id = $1`,
+            [id]
+        );
         return result.rows[0];
     }
 
-    // Returns lesson + teacher profile info
     async findByIdWithAuthor(id) {
         const result = await this.pool.query(
-            `SELECT l.*, tp.full_name as author_name, tp.avatar_url as author_avatar
+            `SELECT l.*,
+                    tp.full_name AS author_name,
+                    tp.avatar_url AS author_avatar
              FROM lessons l
              JOIN modules m ON l.module_id = m.id
              JOIN courses c ON m.course_id = c.id
@@ -39,7 +46,24 @@ export class LessonModel {
         return result.rows[0];
     }
 
-    async update(id, { title, content, orderIndex, contentType, availableFrom, deadline }) {
+    async update(id, { title, content, orderIndex, contentType, availableFrom, deadline }, updatedBy = null) {
+        // Before overwriting, save the current state as a new revision
+        const current = await this.findById(id);
+        if (current) {
+            const maxVersionRes = await this.pool.query(
+                `SELECT COALESCE(MAX(version), 0) AS max FROM lesson_revisions WHERE lesson_id = $1`,
+                [id]
+            );
+            const nextVersion = parseInt(maxVersionRes.rows[0].max, 10) + 1;
+            await this._saveRevision(id, {
+                title: title ?? current.title,
+                content: content ?? current.content,
+                contentType: contentType ?? current.content_type,
+                version: nextVersion,
+                createdBy: updatedBy,
+            });
+        }
+
         const fields = [];
         const values = [];
         let idx = 1;
@@ -49,12 +73,25 @@ export class LessonModel {
         if (contentType !== undefined)   { fields.push(`content_type = $${idx++}`);   values.push(contentType); }
         if (availableFrom !== undefined) { fields.push(`available_from = $${idx++}`); values.push(availableFrom || null); }
         if (deadline !== undefined)      { fields.push(`deadline = $${idx++}`);       values.push(deadline || null); }
-        if (fields.length === 0) return null;
+        if (fields.length === 0) return current;
         fields.push(`updated_at = NOW()`);
         values.push(id);
         const query = `UPDATE lessons SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
         const result = await this.pool.query(query, values);
         return result.rows[0];
+    }
+
+    // Get all historical versions of a lesson
+    async getRevisions(lessonId) {
+        const result = await this.pool.query(
+            `SELECT lr.*, u.email AS editor_email
+             FROM lesson_revisions lr
+             LEFT JOIN users u ON u.id = lr.created_by
+             WHERE lr.lesson_id = $1
+             ORDER BY lr.version DESC`,
+            [lessonId]
+        );
+        return result.rows;
     }
 
     async delete(id) {
@@ -64,9 +101,19 @@ export class LessonModel {
 
     async getMaxOrderIndex(moduleId) {
         const result = await this.pool.query(
-            `SELECT COALESCE(MAX(order_index), 0) as max FROM lessons WHERE module_id = $1`,
+            `SELECT COALESCE(MAX(order_index), 0) AS max FROM lessons WHERE module_id = $1`,
             [moduleId]
         );
         return result.rows[0].max;
+    }
+
+    // Private helper
+    async _saveRevision(lessonId, { title, content, contentType, version, createdBy }) {
+        await this.pool.query(
+            `INSERT INTO lesson_revisions (lesson_id, version, title, content, content_type, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (lesson_id, version) DO NOTHING`,
+            [lessonId, version, title, content || '', contentType, createdBy]
+        );
     }
 }

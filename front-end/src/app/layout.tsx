@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
- title: "EduTech LMS - Premium Online Learning",
+ title: "Qallcert — Online Learning",
  description: "A modern, scalable learning management platform with dynamic courses and analytics.",
 };
 

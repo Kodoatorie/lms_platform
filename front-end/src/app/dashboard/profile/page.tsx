@@ -54,7 +54,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className=" space-y-8">
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 ">
           Profile Settings
@@ -84,7 +84,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <form className="max-w-2xl space-y-6" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+          <form className=" space-y-6" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
             <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
               <div className="sm:col-span-3">
                 <Input

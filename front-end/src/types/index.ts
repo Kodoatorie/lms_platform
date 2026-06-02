@@ -117,7 +117,8 @@ export interface Submission {
  id: number;
  assignment_id: number;
  user_id: number;
- content: string;
+ content: string | null;
+ google_drive_link: string | null;
  submitted_at: string;
  updated_at?: string;
  email?: string; // For teacher view

@@ -12,6 +12,7 @@ import { limiter } from './middlewares/rateLimiter.js';
 import { authMiddleware } from './middlewares/authMiddleware.js';
 import { roleMiddleware } from './middlewares/roleMiddleware.js';
 import { cacheMiddleware } from './middlewares/cacheMiddleware.js';
+import { swaggerMiddleware, swaggerJsonMiddleware } from './swagger/swaggerMiddleware.js';
 
 // Models
 import { UserModel } from './models/userModel.js';
@@ -142,18 +143,18 @@ async function startServer() {
             enrollmentModel, lessonProgressModel, courseModel, userModel, statsModel,
             lessonModel, moduleModel, pool, certificateModel  // certificateModel for dup-cert guard
         );
+        const notificationService = new NotificationService(pool);
         const assignmentService = new AssignmentService(assignmentModel, lessonModel, moduleModel, courseModel);
         const submissionService = new SubmissionService(submissionModel, assignmentModel, lessonModel, moduleModel, courseModel);
         const gradeService = new GradeService(
             gradeModel, submissionModel, assignmentModel,
-            lessonModel, moduleModel, statsModel   // <-- added lessonModel, moduleModel
+            statsModel, lessonModel, moduleModel, notificationService, courseModel
         );
 
         const certificateService = new CertificateService(certificateModel, enrollmentModel, courseModel, userModel, studentProfileModel);
         const analyticsService = new AnalyticsService(statsModel, enrollmentModel, gradeModel, assignmentModel, courseModel);
         const userService = new UserService(studentProfileModel, teacherProfileModel);
         const proctoringService = new ProctoringService(proctoringModel);
-        const notificationService = new NotificationService(pool);
 
         // Controllers
         const authController = new AuthController(authService);
@@ -192,6 +193,8 @@ app.use('/api', createAnalyticsRouter(analyticsController));
 app.use('/api', createUserRouter(userController));
 app.use('/api', createProctoringRouter(proctoringController));
 app.use('/api/notifications', createNotificationRouter(notificationService));
+app.use('/api-docs', ...swaggerMiddleware);
+app.get('/api-docs.json', swaggerJsonMiddleware);
 
         // Health check
         app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
