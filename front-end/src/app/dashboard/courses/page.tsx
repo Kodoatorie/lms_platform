@@ -28,8 +28,11 @@ export default function CoursesPage() {
 
     // Fetch courses — re-fetch when search query changes
     useEffect(() => {
-        dispatch(fetchCourses(debouncedSearch || undefined));
-    }, [dispatch, debouncedSearch]);
+        dispatch(fetchCourses({
+            search: debouncedSearch || undefined,
+            teacherId: isTeacher && user ? user.id : undefined
+        }));
+    }, [dispatch, debouncedSearch, isTeacher, user]);
 
     return (
         <div className="space-y-6">
@@ -135,10 +138,28 @@ export default function CoursesPage() {
                                         {course.description || t('common', 'noResults')}
                                     </p>
                                 </div>
-                                <div className="mt-5 flex items-center justify-between">
-                                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
-                                        {isTeacher ? t('courses', 'manage') : t('courses', 'viewCourse')}
-                                    </span>
+                                <div className="mt-5 flex items-center justify-between flex-wrap gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {/* Price badge */}
+                                        {course.price && Number(course.price) > 0 ? (
+                                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                                {Number(course.price).toLocaleString()} {course.currency || 'USD'}
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                                                {t('pricing', 'free')}
+                                            </span>
+                                        )}
+                                        {/* Published badge (teacher only) */}
+                                        {isTeacher && (
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${course.is_published
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-amber-100 text-amber-700'
+                                                }`}>
+                                                {course.is_published ? t('publishing', 'published') : t('publishing', 'draft')}
+                                            </span>
+                                        )}
+                                    </div>
                                     <svg className="h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors" viewBox="0 0 20 20" fill="currentColor">
                                         <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
                                     </svg>

@@ -5,14 +5,14 @@ export class CourseModel {
 
     async create({ title, description, teacherId }) {
         const result = await this.pool.query(
-            `INSERT INTO courses (title, description, teacher_id)
-             VALUES ($1, $2, $3) RETURNING *`,
+            `INSERT INTO courses (title, description, teacher_id, is_published)
+             VALUES ($1, $2, $3, false) RETURNING *`,
             [title, description, teacherId]
         );
         return result.rows[0];
     }
 
-    async findAll({ teacherId, search } = {}) {
+    async findAll({ teacherId, search, role } = {}) {
         const conditions = [];
         const values = [];
         let idx = 1;
@@ -20,7 +20,11 @@ export class CourseModel {
         if (teacherId) {
             conditions.push(`c.teacher_id = $${idx++}`);
             values.push(teacherId);
+        } else if (role === 'student') {
+            // Students only see published courses
+            conditions.push(`c.is_published = true`);
         }
+
         if (search && search.trim()) {
             // Case-insensitive search on title and description
             conditions.push(`(c.title ILIKE $${idx} OR c.description ILIKE $${idx})`);
@@ -51,15 +55,18 @@ export class CourseModel {
         return result.rows[0];
     }
 
-    async update(id, { title, description, cover_url }) {
+    async update(id, { title, description, cover_url, is_published, price, currency }) {
         const result = await this.pool.query(
             `UPDATE courses
-             SET title       = COALESCE($1, title),
-                 description = COALESCE($2, description),
-                 cover_url   = COALESCE($3, cover_url),
-                 updated_at  = NOW()
-             WHERE id = $4 RETURNING *`,
-            [title, description, cover_url || null, id]
+             SET title        = COALESCE($1, title),
+                 description  = COALESCE($2, description),
+                 cover_url    = COALESCE($3, cover_url),
+                 is_published = COALESCE($4, is_published),
+                 price        = COALESCE($5, price),
+                 currency     = COALESCE($6, currency),
+                 updated_at   = NOW()
+             WHERE id = $7 RETURNING *`,
+            [title, description, cover_url ?? null, is_published ?? null, price ?? null, currency ?? null, id]
         );
         return result.rows[0];
     }

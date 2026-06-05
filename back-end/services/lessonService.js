@@ -1,3 +1,5 @@
+import { sanitizeContent } from '../utils/sanitize.js';
+
 export class LessonService {
     constructor(lessonModel, moduleModel, courseModel) {
         this.lessonModel = lessonModel;
@@ -18,6 +20,7 @@ export class LessonService {
         const maxOrder = await this.lessonModel.getMaxOrderIndex(moduleId);
         return this.lessonModel.create({
             ...data,
+            content: sanitizeContent(data.content),
             contentType: data.content_type || data.contentType,
             moduleId,
             orderIndex: maxOrder + 1,
@@ -45,6 +48,7 @@ export class LessonService {
         }
         return this.lessonModel.update(lessonId, {
             ...data,
+            content: sanitizeContent(data.content),
             contentType: data.content_type || data.contentType,
         });
     }

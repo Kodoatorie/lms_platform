@@ -9,6 +9,7 @@ export const createReviewRouter = (reviewController) => {
 
     router.post('/courses/:courseId/reviews',    roleMiddleware(['student']), validateReview, reviewController.create);
     router.get('/courses/:courseId/reviews',     reviewController.getByCourse);
+    router.post('/teachers/:teacherId/reviews',  roleMiddleware(['student']), validateReview, reviewController.create);
     router.get('/teachers/:teacherId/reviews',   reviewController.getByTeacher);
     router.delete('/reviews/:reviewId',          roleMiddleware(['student']), reviewController.delete);
 

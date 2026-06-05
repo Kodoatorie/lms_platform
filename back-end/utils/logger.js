@@ -19,8 +19,8 @@ function log(level, message, meta = {}) {
 }
 
 export const logger = {
-    info:  (msg, meta) => log(levels.info,  msg, meta),
-    warn:  (msg, meta) => log(levels.warn,  msg, meta),
+    info: (msg, meta) => log(levels.info, msg, meta),
+    warn: (msg, meta) => log(levels.warn, msg, meta),
     error: (msg, meta) => log(levels.error, msg, meta),
     debug: (msg, meta) => log(levels.debug, msg, meta),
 };

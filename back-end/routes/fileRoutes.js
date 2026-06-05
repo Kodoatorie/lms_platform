@@ -11,13 +11,13 @@ import {
 export const createFileRouter = (fileController) => {
     const router = express.Router();
 
-    // All routes require authentication
-    router.use(authMiddleware);
+    // All routes require authentication (applied individually below to prevent global /api block)
 
     // ── Course cover ─────────────────────────────────────────────────────────
     // POST /courses/:courseId/cover
     router.post(
         '/courses/:courseId/cover',
+        authMiddleware,
         roleMiddleware(['teacher', 'admin']),
         handleMulterError(uploadCourseCover),
         fileController.uploadCourseCover
@@ -27,6 +27,7 @@ export const createFileRouter = (fileController) => {
     // POST /lessons/:lessonId/files
     router.post(
         '/lessons/:lessonId/files',
+        authMiddleware,
         roleMiddleware(['teacher', 'admin']),
         handleMulterError(uploadLessonMaterial),
         fileController.uploadLessonMaterial
@@ -35,6 +36,7 @@ export const createFileRouter = (fileController) => {
     // GET /lessons/:lessonId/files
     router.get(
         '/lessons/:lessonId/files',
+        authMiddleware,
         fileController.getLessonFiles
     );
 
@@ -42,12 +44,14 @@ export const createFileRouter = (fileController) => {
     // GET /files/:fileId/download  — returns presigned URL
     router.get(
         '/files/:fileId/download',
+        authMiddleware,
         fileController.getDownloadUrl
     );
 
     // DELETE /files/:fileId
     router.delete(
         '/files/:fileId',
+        authMiddleware,
         roleMiddleware(['teacher', 'admin']),
         fileController.deleteFile
     );

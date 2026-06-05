@@ -5,8 +5,9 @@ export class ReviewController {
 
     create = async (req, res, next) => {
         try {
-            const { courseId } = req.params;
-            const { teacherId, rating, comment } = req.body;
+            const courseId = req.params.courseId || req.body.courseId;
+            const teacherId = req.params.teacherId || req.body.teacherId;
+            const { rating, comment } = req.body;
             const review = await this.reviewService.createReview(
                 req.user.id, courseId, teacherId, rating, comment
             );

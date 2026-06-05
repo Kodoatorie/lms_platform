@@ -65,4 +65,26 @@ export class CourseController {
             next(err);
         }
     };
+
+    publish = async (req, res, next) => {
+        try {
+            const course = await this.courseService.publishCourse(
+                req.params.courseId, req.user.id, req.user.role
+            );
+            res.json(course);
+        } catch (err) {
+            next(err);
+        }
+    };
+
+    unpublish = async (req, res, next) => {
+        try {
+            const course = await this.courseService.unpublishCourse(
+                req.params.courseId, req.user.id, req.user.role
+            );
+            res.json(course);
+        } catch (err) {
+            next(err);
+        }
+    };
 }

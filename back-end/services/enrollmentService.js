@@ -1,22 +1,28 @@
 export class EnrollmentService {
     constructor(enrollmentModel, lessonProgressModel, courseModel, userModel, statsModel, lessonModel, moduleModel, pool, certificateModel) {
-        this.enrollmentModel    = enrollmentModel;
+        this.enrollmentModel = enrollmentModel;
         this.lessonProgressModel = lessonProgressModel;
-        this.courseModel        = courseModel;
-        this.userModel          = userModel;
-        this.statsModel         = statsModel;
-        this.lessonModel        = lessonModel;
-        this.moduleModel        = moduleModel;
-        this.pool               = pool;
+        this.courseModel = courseModel;
+        this.userModel = userModel;
+        this.statsModel = statsModel;
+        this.lessonModel = lessonModel;
+        this.moduleModel = moduleModel;
+        this.pool = pool;
         // FIX: inject certificateModel so we can check for duplicates before queuing
-        this.certificateModel   = certificateModel;
+        this.certificateModel = certificateModel;
     }
 
-    async enrollUser(userId, courseId) {
+    async enrollUser(userId, courseId, skipPaymentCheck = false) {
         const course = await this.courseModel.findById(courseId);
         if (!course) throw new Error('Course not found');
         const existing = await this.enrollmentModel.findOne(userId, courseId);
         if (existing) throw new Error('Already enrolled');
+
+        // Payment check: if course has a price, caller must confirm payment
+        if (!skipPaymentCheck && course.price && Number(course.price) > 0) {
+            throw new Error('This course requires payment. Please complete checkout first.');
+        }
+
         return this.enrollmentModel.enroll(userId, courseId);
     }
 

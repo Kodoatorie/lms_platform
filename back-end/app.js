@@ -31,6 +31,7 @@ import { CertificateModel } from './models/certificateModel.js';
 import { StatsModel } from './models/statsModel.js';
 import { ProctoringModel } from './models/proctoringModel.js';
 import { ReviewModel } from './models/reviewModel.js';
+import { OrderModel } from './models/orderModel.js';
 
 // Services
 import { AuthService } from './services/authService.js';
@@ -47,6 +48,7 @@ import { UserService } from './services/userService.js';
 import { ProctoringService } from './services/proctoringService.js';
 import { ReviewService } from './services/reviewService.js';
 import { NotificationService } from './services/notificationService.js';
+import { OrderService } from './services/orderService.js';
 
 // Controllers
 import { AuthController } from './controllers/authController.js';
@@ -63,6 +65,7 @@ import { UserController } from './controllers/userController.js';
 import { ProctoringController } from './controllers/proctoringController.js';
 import { ReviewController } from './controllers/reviewController.js';
 import { StudentController } from './controllers/studentController.js';
+import { OrderController } from './controllers/orderController.js';
 
 // Routes
 import { createAuthRouter } from './routes/authRoutes.js';
@@ -81,6 +84,7 @@ import { createReviewRouter } from './routes/reviewRoutes.js';
 import { createStudentRouter } from './routes/studentRoutes.js';
 import { createNotificationRouter } from './routes/notificationRoutes.js';
 import { createFileRouter } from './routes/fileRoutes.js';
+import { createOrderRouter } from './routes/orderRoutes.js';
 
 // MinIO
 import { initMinio } from './lib/minio.js';
@@ -138,6 +142,7 @@ async function startServer() {
         const certificateModel = new CertificateModel(pool);
         const statsModel = new StatsModel(pool);
         const proctoringModel = new ProctoringModel(pool);
+        const orderModel = new OrderModel(pool);
 
         // Services
         const authService = new AuthService(userModel, refreshTokenModel, studentProfileModel, teacherProfileModel, redisClient);
@@ -163,6 +168,7 @@ async function startServer() {
         const analyticsService = new AnalyticsService(statsModel, enrollmentModel, gradeModel, assignmentModel, courseModel);
         const userService = new UserService(studentProfileModel, teacherProfileModel);
         const proctoringService = new ProctoringService(proctoringModel);
+        const orderService = new OrderService(orderModel, courseModel, enrollmentModel, enrollmentService);
 
         // Controllers
         const authController = new AuthController(authService);
@@ -177,6 +183,7 @@ async function startServer() {
         const analyticsController = new AnalyticsController(analyticsService);
         const userController = new UserController(userService);
         const proctoringController = new ProctoringController(proctoringService);
+        const orderController = new OrderController(orderService);
 
         // MinIO: init buckets
         await initMinio();
@@ -211,6 +218,7 @@ app.use('/api', createAnalyticsRouter(analyticsController));
 app.use('/api', createUserRouter(userController));
 app.use('/api', createProctoringRouter(proctoringController));
 app.use('/api/notifications', createNotificationRouter(notificationService));
+app.use('/api', createOrderRouter(orderController));
 app.use('/api-docs', ...swaggerMiddleware);
 app.get('/api-docs.json', swaggerJsonMiddleware);
 

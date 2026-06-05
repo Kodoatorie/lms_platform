@@ -24,6 +24,7 @@ import {
   LogOut,
   Menu,
   X,
+  ShoppingBag,
 } from 'lucide-react';
 
 interface Notification {
@@ -82,7 +83,7 @@ function NotificationBell() {
     try {
       await apiClient.patch('/notifications/read-all');
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    } catch {/* silent */}
+    } catch {/* silent */ }
   };
 
   return (
@@ -172,6 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       case 'notifications': return <Bell className="w-5 h-5" />;
       case 'certificates': return <Award className="w-5 h-5" />;
       case 'reviews': return <Star className="w-5 h-5" />;
+      case 'orders': return <ShoppingBag className="w-5 h-5" />;
       case 'profile': return <User className="w-5 h-5" />;
       case 'manageCourses': return <BookOpen className="w-5 h-5" />;
       case 'grading': return <Edit3 className="w-5 h-5" />;
@@ -182,23 +184,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const studentNav = [
-    { key: 'dashboard',       href: '/dashboard' },
-    { key: 'courses',         href: '/dashboard/courses' },
-    { key: 'myGrades',        href: '/dashboard/grades' },
-    { key: 'notifications',   href: '/dashboard/notifications' },
-    { key: 'certificates',    href: '/dashboard/certificates' },
-    { key: 'reviews',         href: '/dashboard/reviews' },
-    { key: 'profile',         href: '/dashboard/profile' },
+    { key: 'dashboard', href: '/dashboard' },
+    { key: 'courses', href: '/dashboard/courses' },
+    { key: 'myGrades', href: '/dashboard/grades' },
+    { key: 'orders', href: '/dashboard/orders' },
+    { key: 'notifications', href: '/dashboard/notifications' },
+    { key: 'certificates', href: '/dashboard/certificates' },
+    { key: 'reviews', href: '/dashboard/reviews' },
+    { key: 'profile', href: '/dashboard/profile' },
   ];
 
   const teacherNav = [
-    { key: 'dashboard',          href: '/dashboard' },
-    { key: 'manageCourses',      href: '/dashboard/courses' },
-    { key: 'grading',            href: '/dashboard/grading' },
-    { key: 'students',           href: '/dashboard/students' },
-    { key: 'analytics',          href: '/dashboard/analytics' },
-    { key: 'reviews',            href: '/dashboard/reviews' },
-    { key: 'profile',            href: '/dashboard/profile' },
+    { key: 'dashboard', href: '/dashboard' },
+    { key: 'manageCourses', href: '/dashboard/courses' },
+    { key: 'grading', href: '/dashboard/grading' },
+    { key: 'students', href: '/dashboard/students' },
+    { key: 'analytics', href: '/dashboard/analytics' },
+    { key: 'reviews', href: '/dashboard/reviews' },
+    { key: 'profile', href: '/dashboard/profile' },
   ];
 
   const navItems = user?.role === 'teacher' ? teacherNav : studentNav;
@@ -278,11 +281,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.key}
                 href={item.href}
                 onClick={() => setIsSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${active
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-700 hover:bg-slate-100'
+                  }`}
               >
                 {getIcon(item.key)}
                 {t('nav', item.key as any)}

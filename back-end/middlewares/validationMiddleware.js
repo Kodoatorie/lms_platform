@@ -68,6 +68,8 @@ export const validateUpdateCourse = validate(
     Joi.object({
         title: Joi.string().min(3).max(255),
         description: Joi.string().max(5000).allow('', null),
+        price: Joi.number().min(0).allow(null),
+        currency: Joi.string().length(3).allow(null),
     }).min(1).messages({ 'object.min': 'At least one field must be provided' })
 );
 
@@ -191,6 +193,7 @@ export const validateGrade = validate(
 export const validateReview = validate(
     Joi.object({
         teacherId: Joi.number().integer().positive().allow(null).optional(),
+        courseId: Joi.number().integer().positive().allow(null).optional(),
         rating: Joi.number().integer().min(1).max(5).required().messages({
             'number.min': 'Rating must be between 1 and 5',
             'number.max': 'Rating must be between 1 and 5',

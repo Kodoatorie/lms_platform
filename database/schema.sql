@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict N3MMe3jE0pCTXPFKx76fk1VIePHed4smgOKBbSTRDyfgiOOIIlbHUJpo0Tq4iBK
+\restrict A53cgju8ab9vTv3vg7T8o4xc7SO0X7eE8pKPqRDCuTWsZcoZLWPRjBKfEafk9gI
 
 -- Dumped from database version 14.20 (Homebrew)
 -- Dumped by pg_dump version 14.20 (Homebrew)
@@ -29,7 +29,7 @@ CREATE TYPE public.enrollment_status AS ENUM (
 );
 
 
-ALTER TYPE public.enrollment_status OWNER TO ilassalimov;
+ALTER TYPE public.enrollment_status OWNER TO edu;
 
 --
 -- Name: lesson_content_type; Type: TYPE; Schema: public; Owner: ilassalimov
@@ -42,7 +42,7 @@ CREATE TYPE public.lesson_content_type AS ENUM (
 );
 
 
-ALTER TYPE public.lesson_content_type OWNER TO ilassalimov;
+ALTER TYPE public.lesson_content_type OWNER TO edu;
 
 --
 -- Name: proctoring_session_status; Type: TYPE; Schema: public; Owner: ilassalimov
@@ -55,7 +55,7 @@ CREATE TYPE public.proctoring_session_status AS ENUM (
 );
 
 
-ALTER TYPE public.proctoring_session_status OWNER TO ilassalimov;
+ALTER TYPE public.proctoring_session_status OWNER TO edu;
 
 --
 -- Name: user_role; Type: TYPE; Schema: public; Owner: ilassalimov
@@ -68,7 +68,23 @@ CREATE TYPE public.user_role AS ENUM (
 );
 
 
-ALTER TYPE public.user_role OWNER TO ilassalimov;
+ALTER TYPE public.user_role OWNER TO edu;
+
+--
+-- Name: update_updated_at(); Type: FUNCTION; Schema: public; Owner: ilassalimov
+--
+
+CREATE FUNCTION public.update_updated_at() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.update_updated_at() OWNER TO edu;
 
 --
 -- Name: update_updated_at_column(); Type: FUNCTION; Schema: public; Owner: ilassalimov
@@ -84,7 +100,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_updated_at_column() OWNER TO ilassalimov;
+ALTER FUNCTION public.update_updated_at_column() OWNER TO edu;
 
 SET default_tablespace = '';
 
@@ -107,7 +123,7 @@ CREATE TABLE public.assignments (
 );
 
 
-ALTER TABLE public.assignments OWNER TO ilassalimov;
+ALTER TABLE public.assignments OWNER TO edu;
 
 --
 -- Name: assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -122,7 +138,7 @@ CREATE SEQUENCE public.assignments_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.assignments_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.assignments_id_seq OWNER TO edu;
 
 --
 -- Name: assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -146,7 +162,7 @@ CREATE TABLE public.certificates (
 );
 
 
-ALTER TABLE public.certificates OWNER TO ilassalimov;
+ALTER TABLE public.certificates OWNER TO edu;
 
 --
 -- Name: certificates_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -161,7 +177,7 @@ CREATE SEQUENCE public.certificates_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.certificates_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.certificates_id_seq OWNER TO edu;
 
 --
 -- Name: certificates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -186,7 +202,7 @@ CREATE TABLE public.course_stats (
 );
 
 
-ALTER TABLE public.course_stats OWNER TO ilassalimov;
+ALTER TABLE public.course_stats OWNER TO edu;
 
 --
 -- Name: course_stats_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -201,7 +217,7 @@ CREATE SEQUENCE public.course_stats_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.course_stats_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.course_stats_id_seq OWNER TO edu;
 
 --
 -- Name: course_stats_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -220,11 +236,15 @@ CREATE TABLE public.courses (
     description text,
     teacher_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
+    updated_at timestamp with time zone DEFAULT now(),
+    cover_url text,
+    is_published boolean DEFAULT false NOT NULL,
+    price numeric(10,2) DEFAULT 0,
+    currency character varying(3) DEFAULT 'USD'::character varying
 );
 
 
-ALTER TABLE public.courses OWNER TO ilassalimov;
+ALTER TABLE public.courses OWNER TO edu;
 
 --
 -- Name: courses_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -239,7 +259,7 @@ CREATE SEQUENCE public.courses_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.courses_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.courses_id_seq OWNER TO edu;
 
 --
 -- Name: courses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -264,7 +284,7 @@ CREATE TABLE public.enrollments (
 );
 
 
-ALTER TABLE public.enrollments OWNER TO ilassalimov;
+ALTER TABLE public.enrollments OWNER TO edu;
 
 --
 -- Name: enrollments_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -279,13 +299,57 @@ CREATE SEQUENCE public.enrollments_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.enrollments_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.enrollments_id_seq OWNER TO edu;
 
 --
 -- Name: enrollments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
 --
 
 ALTER SEQUENCE public.enrollments_id_seq OWNED BY public.enrollments.id;
+
+
+--
+-- Name: files; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.files (
+    id bigint NOT NULL,
+    course_id bigint,
+    lesson_id bigint,
+    submission_id bigint,
+    bucket character varying(63) NOT NULL,
+    object_name text NOT NULL,
+    original_name text NOT NULL,
+    mime_type character varying(127) NOT NULL,
+    size_bytes bigint NOT NULL,
+    file_type character varying(32) NOT NULL,
+    public_url text,
+    uploaded_by bigint,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.files OWNER TO edu;
+
+--
+-- Name: files_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.files_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.files_id_seq OWNER TO edu;
+
+--
+-- Name: files_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.files_id_seq OWNED BY public.files.id;
 
 
 --
@@ -305,7 +369,7 @@ CREATE TABLE public.grades (
 );
 
 
-ALTER TABLE public.grades OWNER TO ilassalimov;
+ALTER TABLE public.grades OWNER TO edu;
 
 --
 -- Name: grades_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -320,7 +384,7 @@ CREATE SEQUENCE public.grades_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.grades_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.grades_id_seq OWNER TO edu;
 
 --
 -- Name: grades_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -344,7 +408,7 @@ CREATE TABLE public.lesson_progress (
 );
 
 
-ALTER TABLE public.lesson_progress OWNER TO ilassalimov;
+ALTER TABLE public.lesson_progress OWNER TO edu;
 
 --
 -- Name: lesson_progress_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -359,7 +423,7 @@ CREATE SEQUENCE public.lesson_progress_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.lesson_progress_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.lesson_progress_id_seq OWNER TO edu;
 
 --
 -- Name: lesson_progress_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -384,7 +448,7 @@ CREATE TABLE public.lesson_revisions (
 );
 
 
-ALTER TABLE public.lesson_revisions OWNER TO ilassalimov;
+ALTER TABLE public.lesson_revisions OWNER TO edu;
 
 --
 -- Name: lesson_revisions_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -399,7 +463,7 @@ CREATE SEQUENCE public.lesson_revisions_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.lesson_revisions_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.lesson_revisions_id_seq OWNER TO edu;
 
 --
 -- Name: lesson_revisions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -426,7 +490,7 @@ CREATE TABLE public.lessons (
 );
 
 
-ALTER TABLE public.lessons OWNER TO ilassalimov;
+ALTER TABLE public.lessons OWNER TO edu;
 
 --
 -- Name: lessons_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -441,7 +505,7 @@ CREATE SEQUENCE public.lessons_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.lessons_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.lessons_id_seq OWNER TO edu;
 
 --
 -- Name: lessons_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -466,7 +530,7 @@ CREATE TABLE public.modules (
 );
 
 
-ALTER TABLE public.modules OWNER TO ilassalimov;
+ALTER TABLE public.modules OWNER TO edu;
 
 --
 -- Name: modules_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -481,7 +545,7 @@ CREATE SEQUENCE public.modules_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.modules_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.modules_id_seq OWNER TO edu;
 
 --
 -- Name: modules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -504,7 +568,7 @@ CREATE TABLE public.notifications (
 );
 
 
-ALTER TABLE public.notifications OWNER TO ilassalimov;
+ALTER TABLE public.notifications OWNER TO edu;
 
 --
 -- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -519,13 +583,55 @@ CREATE SEQUENCE public.notifications_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.notifications_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.notifications_id_seq OWNER TO edu;
 
 --
 -- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
 --
 
 ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
+
+
+--
+-- Name: orders; Type: TABLE; Schema: public; Owner: ilassalimov
+--
+
+CREATE TABLE public.orders (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    course_id bigint NOT NULL,
+    amount numeric(10,2) NOT NULL,
+    currency character varying(3) DEFAULT 'USD'::character varying NOT NULL,
+    status character varying(20) DEFAULT 'pending'::character varying NOT NULL,
+    payment_provider character varying(30) DEFAULT 'stripe'::character varying NOT NULL,
+    provider_order_id text,
+    provider_data jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.orders OWNER TO edu;
+
+--
+-- Name: orders_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
+--
+
+CREATE SEQUENCE public.orders_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.orders_id_seq OWNER TO edu;
+
+--
+-- Name: orders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
+--
+
+ALTER SEQUENCE public.orders_id_seq OWNED BY public.orders.id;
 
 
 --
@@ -541,7 +647,7 @@ CREATE TABLE public.proctoring_events (
 );
 
 
-ALTER TABLE public.proctoring_events OWNER TO ilassalimov;
+ALTER TABLE public.proctoring_events OWNER TO edu;
 
 --
 -- Name: proctoring_events_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -556,7 +662,7 @@ CREATE SEQUENCE public.proctoring_events_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.proctoring_events_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.proctoring_events_id_seq OWNER TO edu;
 
 --
 -- Name: proctoring_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -581,7 +687,7 @@ CREATE TABLE public.proctoring_sessions (
 );
 
 
-ALTER TABLE public.proctoring_sessions OWNER TO ilassalimov;
+ALTER TABLE public.proctoring_sessions OWNER TO edu;
 
 --
 -- Name: proctoring_sessions_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -596,7 +702,7 @@ CREATE SEQUENCE public.proctoring_sessions_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.proctoring_sessions_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.proctoring_sessions_id_seq OWNER TO edu;
 
 --
 -- Name: proctoring_sessions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -618,7 +724,7 @@ CREATE TABLE public.refresh_tokens (
 );
 
 
-ALTER TABLE public.refresh_tokens OWNER TO ilassalimov;
+ALTER TABLE public.refresh_tokens OWNER TO edu;
 
 --
 -- Name: refresh_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -633,7 +739,7 @@ CREATE SEQUENCE public.refresh_tokens_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.refresh_tokens_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.refresh_tokens_id_seq OWNER TO edu;
 
 --
 -- Name: refresh_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -659,7 +765,7 @@ CREATE TABLE public.reviews (
 );
 
 
-ALTER TABLE public.reviews OWNER TO ilassalimov;
+ALTER TABLE public.reviews OWNER TO edu;
 
 --
 -- Name: reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -674,7 +780,7 @@ CREATE SEQUENCE public.reviews_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.reviews_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.reviews_id_seq OWNER TO edu;
 
 --
 -- Name: reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -699,7 +805,7 @@ CREATE TABLE public.student_profiles (
 );
 
 
-ALTER TABLE public.student_profiles OWNER TO ilassalimov;
+ALTER TABLE public.student_profiles OWNER TO edu;
 
 --
 -- Name: student_profiles_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -714,7 +820,7 @@ CREATE SEQUENCE public.student_profiles_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.student_profiles_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.student_profiles_id_seq OWNER TO edu;
 
 --
 -- Name: student_profiles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -733,11 +839,14 @@ CREATE TABLE public.submissions (
     user_id integer NOT NULL,
     content text NOT NULL,
     submitted_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
+    updated_at timestamp with time zone DEFAULT now(),
+    google_drive_link text,
+    CONSTRAINT chk_google_drive_link CHECK (((google_drive_link IS NULL) OR (google_drive_link ~ '^https://(drive|docs)\.google\.com/'::text))),
+    CONSTRAINT chk_submission_has_content CHECK (((content IS NOT NULL) OR (google_drive_link IS NOT NULL)))
 );
 
 
-ALTER TABLE public.submissions OWNER TO ilassalimov;
+ALTER TABLE public.submissions OWNER TO edu;
 
 --
 -- Name: submissions_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -752,7 +861,7 @@ CREATE SEQUENCE public.submissions_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.submissions_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.submissions_id_seq OWNER TO edu;
 
 --
 -- Name: submissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -776,7 +885,7 @@ CREATE TABLE public.teacher_profiles (
 );
 
 
-ALTER TABLE public.teacher_profiles OWNER TO ilassalimov;
+ALTER TABLE public.teacher_profiles OWNER TO edu;
 
 --
 -- Name: teacher_profiles_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -791,7 +900,7 @@ CREATE SEQUENCE public.teacher_profiles_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.teacher_profiles_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.teacher_profiles_id_seq OWNER TO edu;
 
 --
 -- Name: teacher_profiles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -815,7 +924,7 @@ CREATE TABLE public.user_stats (
 );
 
 
-ALTER TABLE public.user_stats OWNER TO ilassalimov;
+ALTER TABLE public.user_stats OWNER TO edu;
 
 --
 -- Name: user_stats_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -830,7 +939,7 @@ CREATE SEQUENCE public.user_stats_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.user_stats_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.user_stats_id_seq OWNER TO edu;
 
 --
 -- Name: user_stats_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -853,7 +962,7 @@ CREATE TABLE public.users (
 );
 
 
-ALTER TABLE public.users OWNER TO ilassalimov;
+ALTER TABLE public.users OWNER TO edu;
 
 --
 -- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: ilassalimov
@@ -868,7 +977,7 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.users_id_seq OWNER TO ilassalimov;
+ALTER TABLE public.users_id_seq OWNER TO edu;
 
 --
 -- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ilassalimov
@@ -913,6 +1022,13 @@ ALTER TABLE ONLY public.enrollments ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: files id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.files ALTER COLUMN id SET DEFAULT nextval('public.files_id_seq'::regclass);
+
+
+--
 -- Name: grades id; Type: DEFAULT; Schema: public; Owner: ilassalimov
 --
 
@@ -952,6 +1068,13 @@ ALTER TABLE ONLY public.modules ALTER COLUMN id SET DEFAULT nextval('public.modu
 --
 
 ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
+
+
+--
+-- Name: orders id; Type: DEFAULT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.orders ALTER COLUMN id SET DEFAULT nextval('public.orders_id_seq'::regclass);
 
 
 --
@@ -1090,6 +1213,14 @@ ALTER TABLE ONLY public.enrollments
 
 
 --
+-- Name: files files_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.files
+    ADD CONSTRAINT files_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: grades grades_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
 --
 
@@ -1175,6 +1306,14 @@ ALTER TABLE ONLY public.modules
 
 ALTER TABLE ONLY public.notifications
     ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
 
 
 --
@@ -1318,6 +1457,13 @@ CREATE INDEX idx_certificates_verification_code ON public.certificates USING btr
 
 
 --
+-- Name: idx_courses_is_published; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_courses_is_published ON public.courses USING btree (is_published);
+
+
+--
 -- Name: idx_courses_teacher_id; Type: INDEX; Schema: public; Owner: ilassalimov
 --
 
@@ -1343,6 +1489,41 @@ CREATE INDEX idx_enrollments_status ON public.enrollments USING btree (status);
 --
 
 CREATE INDEX idx_enrollments_user_id ON public.enrollments USING btree (user_id);
+
+
+--
+-- Name: idx_files_course_cover; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE UNIQUE INDEX idx_files_course_cover ON public.files USING btree (course_id, file_type) WHERE ((file_type)::text = 'course_cover'::text);
+
+
+--
+-- Name: idx_files_course_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_files_course_id ON public.files USING btree (course_id);
+
+
+--
+-- Name: idx_files_lesson_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_files_lesson_id ON public.files USING btree (lesson_id);
+
+
+--
+-- Name: idx_files_submission_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_files_submission_id ON public.files USING btree (submission_id);
+
+
+--
+-- Name: idx_files_uploaded_by; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_files_uploaded_by ON public.files USING btree (uploaded_by);
 
 
 --
@@ -1420,6 +1601,41 @@ CREATE INDEX idx_notifications_is_read ON public.notifications USING btree (is_r
 --
 
 CREATE INDEX idx_notifications_user_id ON public.notifications USING btree (user_id);
+
+
+--
+-- Name: idx_orders_course_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_orders_course_id ON public.orders USING btree (course_id);
+
+
+--
+-- Name: idx_orders_provider_order; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_orders_provider_order ON public.orders USING btree (provider_order_id) WHERE (provider_order_id IS NOT NULL);
+
+
+--
+-- Name: idx_orders_status; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_orders_status ON public.orders USING btree (status);
+
+
+--
+-- Name: idx_orders_user_course_paid; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE UNIQUE INDEX idx_orders_user_course_paid ON public.orders USING btree (user_id, course_id) WHERE ((status)::text = 'paid'::text);
+
+
+--
+-- Name: idx_orders_user_id; Type: INDEX; Schema: public; Owner: ilassalimov
+--
+
+CREATE INDEX idx_orders_user_id ON public.orders USING btree (user_id);
 
 
 --
@@ -1518,6 +1734,13 @@ CREATE INDEX idx_users_email ON public.users USING btree (email);
 --
 
 CREATE INDEX idx_users_role ON public.users USING btree (role);
+
+
+--
+-- Name: orders orders_updated_at; Type: TRIGGER; Schema: public; Owner: ilassalimov
+--
+
+CREATE TRIGGER orders_updated_at BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 
 --
@@ -1682,6 +1905,38 @@ ALTER TABLE ONLY public.enrollments
 
 
 --
+-- Name: files files_course_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.files
+    ADD CONSTRAINT files_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: files files_lesson_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.files
+    ADD CONSTRAINT files_lesson_id_fkey FOREIGN KEY (lesson_id) REFERENCES public.lessons(id) ON DELETE CASCADE;
+
+
+--
+-- Name: files files_submission_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.files
+    ADD CONSTRAINT files_submission_id_fkey FOREIGN KEY (submission_id) REFERENCES public.submissions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: files files_uploaded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.files
+    ADD CONSTRAINT files_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: grades grades_graded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
 --
 
@@ -1751,6 +2006,22 @@ ALTER TABLE ONLY public.modules
 
 ALTER TABLE ONLY public.notifications
     ADD CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: orders orders_course_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: orders orders_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ilassalimov
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -1853,5 +2124,5 @@ ALTER TABLE ONLY public.user_stats
 -- PostgreSQL database dump complete
 --
 
-\unrestrict N3MMe3jE0pCTXPFKx76fk1VIePHed4smgOKBbSTRDyfgiOOIIlbHUJpo0Tq4iBK
+\unrestrict A53cgju8ab9vTv3vg7T8o4xc7SO0X7eE8pKPqRDCuTWsZcoZLWPRjBKfEafk9gI
 

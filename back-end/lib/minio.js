@@ -101,9 +101,5 @@ export async function getPresignedUrl(bucket, objectName, expirySeconds = 3600) 
 
 // ── Public URL (no auth needed for public bucket) ────────────────────────────
 export function getPublicUrl(objectName) {
-    const proto = config.minio.useSSL ? 'https' : 'http';
-    const port  = config.minio.port !== 80 && config.minio.port !== 443
-        ? `:${config.minio.port}`
-        : '';
-    return `${proto}://${config.minio.endPoint}${port}/${BUCKETS.PUBLIC}/${objectName}`;
+    return `/${BUCKETS.PUBLIC}/${objectName}`;
 }

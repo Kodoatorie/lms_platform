@@ -24,6 +24,9 @@ export const createCourseRouter = (courseController) => {
 
     router.patch('/:courseId', roleMiddleware(['teacher']), validateUpdateCourse, courseController.update);
     router.delete('/:courseId', roleMiddleware(['teacher']), courseController.delete);
+    
+    router.patch('/:courseId/publish', roleMiddleware(['teacher']), courseController.publish);
+    router.patch('/:courseId/unpublish', roleMiddleware(['teacher']), courseController.unpublish);
 
     return router;
 };

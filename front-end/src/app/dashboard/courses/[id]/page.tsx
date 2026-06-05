@@ -4,7 +4,7 @@ import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
-import { fetchCourseById, clearCurrentCourse, updateCourse, deleteCourse } from '../../../../store/courses/coursesSlice';
+import { fetchCourseById, clearCurrentCourse, updateCourse, deleteCourse, publishCourse, unpublishCourse } from '../../../../store/courses/coursesSlice';
 import apiClient from '../../../../lib/api/client';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
@@ -94,7 +94,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState<string>('0');
+  const [editCurrency, setEditCurrency] = useState('USD');
   const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Delete course
   const [isDeleteConfirm, setIsDeleteConfirm] = useState(false);
@@ -150,7 +153,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
         .then(({ data }) => {
           setEnrollmentStatus(data.status);
           setCourseProgress(data.progressPercent);
-        }).catch(() => {});
+        }).catch(() => { });
     }
     return () => { dispatch(clearCurrentCourse()); };
   }, [dispatch, courseId, user]);
@@ -159,11 +162,32 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   const handleEnroll = async () => {
     setIsEnrolling(true);
     try {
-      await apiClient.post(`/courses/${courseId}/enroll`);
-      setEnrollmentStatus('active');
+      if (currentCourse?.price && Number(currentCourse.price) > 0) {
+        // 1. Create order
+        const { data } = await apiClient.post('/orders', { courseId });
+        if (data?.order?.id) {
+          // 2. Mock payment process for development
+          const providerId = `mock_pi_${data.order.id}_${Date.now()}`;
+          await apiClient.patch(`/orders/${data.order.id}/attach-provider`, { providerOrderId: providerId });
+          // 3. Trigger webhook to mark as paid
+          await apiClient.post('/orders/webhook', {
+            event: 'payment.success',
+            provider_order_id: providerId,
+            provider_data: { method: 'mock_payment' }
+          });
+          setEnrollmentStatus('active');
+          alert(t('pricing', 'paymentSuccess') || 'Payment successful! You are now enrolled.');
+        }
+      } else {
+        await apiClient.post(`/courses/${courseId}/enroll`);
+        setEnrollmentStatus('active');
+      }
     } catch (err: any) {
-      if (err.response?.data?.message === 'Already enrolled') setEnrollmentStatus('active');
-      else alert('Failed to enroll: ' + (err.response?.data?.message || err.message));
+      if (err.response?.data?.message === 'Already enrolled' || err.response?.data?.error === 'You already have access to this course') {
+        setEnrollmentStatus('active');
+      } else {
+        alert('Failed to enroll: ' + (err.response?.data?.message || err.response?.data?.error || err.message));
+      }
     } finally { setIsEnrolling(false); }
   };
 
@@ -200,15 +224,36 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     if (!currentCourse) return;
     setEditTitle(currentCourse.title);
     setEditDescription(currentCourse.description || '');
+    setEditPrice(String(currentCourse.price ?? 0));
+    setEditCurrency(currentCourse.currency || 'USD');
     setIsEditing(true);
   };
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    const result = await dispatch(updateCourse({ id: courseId, title: editTitle, description: editDescription }));
+    const result = await dispatch(updateCourse({
+      id: courseId,
+      title: editTitle,
+      description: editDescription,
+      price: parseFloat(editPrice) || 0,
+      currency: editCurrency,
+    }));
     setIsSaving(false);
     if (updateCourse.fulfilled.match(result)) setIsEditing(false);
   };
+
+  const handlePublishToggle = async () => {
+    if (!currentCourse) return;
+    const action = currentCourse.is_published ? unpublishCourse : publishCourse;
+    const confirmMsg = currentCourse.is_published
+      ? t('publishing', 'unpublishConfirm')
+      : t('publishing', 'publishConfirm');
+    if (!confirm(confirmMsg)) return;
+    setIsPublishing(true);
+    await dispatch(action(courseId));
+    setIsPublishing(false);
+  };
+
   const handleDelete = async () => {
     setIsDeleting(true);
     const result = await dispatch(deleteCourse(courseId));
@@ -383,6 +428,25 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
             {isTeacher ? (
               <>
                 <Button variant="secondary" size="lg" onClick={openEditModal}>✏️ {t('courses', 'editCourse')}</Button>
+                <button
+                  onClick={handlePublishToggle}
+                  disabled={isPublishing}
+                  className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-60 ${currentCourse.is_published
+                    ? 'bg-amber-500 hover:bg-amber-400 text-white'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    }`}
+                >
+                  {isPublishing ? (
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : currentCourse.is_published ? (
+                    <>📤 {t('publishing', 'unpublish')}</>
+                  ) : (
+                    <>🚀 {t('publishing', 'publish')}</>
+                  )}
+                </button>
                 <Button variant="ghost" size="lg" className="bg-red-500/20 hover:bg-red-500/40 text-white" onClick={() => setIsDeleteConfirm(true)}>🗑 {t('common', 'delete')}</Button>
               </>
             ) : isEnrolled ? (
@@ -541,7 +605,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">{t('courses', 'ratingLabel')}</label>
               <div className="flex gap-2">
-                {[1,2,3,4,5].map((n) => (
+                {[1, 2, 3, 4, 5].map((n) => (
                   <button key={n} type="button" onClick={() => setReviewRating(n)}
                     className={`text-2xl transition-transform hover:scale-110 ${n <= reviewRating ? 'opacity-100' : 'opacity-30'}`}>
                     ⭐
@@ -589,6 +653,31 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
               <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('courses', 'description')}</label>
               <textarea required rows={4} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('pricing', 'price')}</label>
+                <input
+                  type="number" min="0" step="0.01"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  value={editPrice}
+                  onChange={(e) => setEditPrice(e.target.value)}
+                />
+                <p className="text-xs text-slate-400 mt-1">0 = {t('pricing', 'free')}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('pricing', 'currency')}</label>
+                <select
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  value={editCurrency}
+                  onChange={(e) => setEditCurrency(e.target.value)}
+                >
+                  <option value="USD">USD — $</option>
+                  <option value="KZT">KZT — ₸</option>
+                  <option value="RUB">RUB — ₽</option>
+                  <option value="EUR">EUR — €</option>
+                </select>
+              </div>
             </div>
             <div className="flex justify-end gap-3">
               <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>{t('common', 'cancel')}</Button>

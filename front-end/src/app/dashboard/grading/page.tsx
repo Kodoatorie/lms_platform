@@ -13,6 +13,7 @@ interface Submission {
   email: string;
   full_name: string | null;
   content: string;
+  google_drive_link?: string | null;
   submitted_at: string;
   assignment_title: string;
   lesson_title: string;
@@ -190,9 +191,21 @@ export default function GradingPage() {
                   <div className="border-t border-slate-200 p-5 bg-slate-50 space-y-4">
                     <div>
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('grading', 'studentAnswer')}</p>
-                      <div className="bg-white rounded-xl p-4 ring-1 ring-slate-200 text-sm text-slate-700 whitespace-pre-wrap max-h-48 overflow-y-auto">
-                        {sub.content}
-                      </div>
+                      {sub.content && (
+                        <div className="bg-white rounded-xl p-4 ring-1 ring-slate-200 text-sm text-slate-700 whitespace-pre-wrap max-h-48 overflow-y-auto mb-3">
+                          {sub.content}
+                        </div>
+                      )}
+                      {sub.google_drive_link && (
+                        <div className="mt-2">
+                          <a href={sub.google_drive_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline bg-indigo-50 px-3 py-1.5 rounded-lg">
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            {t('grades', 'openGoogleDrive')}
+                          </a>
+                        </div>
+                      )}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
