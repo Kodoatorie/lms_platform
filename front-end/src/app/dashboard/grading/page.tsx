@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppSelector } from '../../../store/hooks';
 import apiClient from '../../../lib/api/client';
+import { Button } from '../../../components/ui/button';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 interface Submission {
   id: number;
@@ -35,6 +37,7 @@ function Badge({ graded }: { graded: boolean }) {
 }
 
 export default function GradingPage() {
+  const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAppSelector((s) => s.auth);
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
@@ -99,19 +102,19 @@ export default function GradingPage() {
     return <div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" /></div>;
   }
   if (user.role !== 'teacher') {
-    return <div className="rounded-md bg-red-50 p-4 border border-red-200"><p className="text-sm text-red-700">Access restricted to teachers only.</p></div>;
+    return <div className="rounded-md bg-red-50 p-4 border border-red-200"><p className="text-sm text-red-700">{t('grading', 'accessRestricted')}</p></div>;
   }
 
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Grading</h1>
-        <p className="mt-1 text-sm text-slate-600">Review and grade student homework submissions.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('grading', 'title')}</h1>
+        <p className="mt-1 text-sm text-slate-600">{t('grading', 'subtitle')}</p>
       </header>
 
       {/* Course selector */}
       <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200 flex items-center gap-4 flex-wrap">
-        <label className="text-sm font-medium text-slate-700 flex-shrink-0">Course:</label>
+        <label className="text-sm font-medium text-slate-700 flex-shrink-0">{t('grading', 'course')}:</label>
         {isLoadingCourses ? (
           <div className="h-8 w-48 bg-slate-200 animate-pulse rounded-full" />
         ) : (
@@ -131,7 +134,7 @@ export default function GradingPage() {
         {(['pending', 'graded', 'all'] as const).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${filter === f ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-            {f}{f === 'pending' && pendingCount > 0 && (
+            {t('grading', f)}{f === 'pending' && pendingCount > 0 && (
               <span className="ml-2 bg-amber-400 text-white text-xs rounded-full px-1.5 py-0.5">{pendingCount}</span>
             )}
           </button>
@@ -143,7 +146,7 @@ export default function GradingPage() {
         <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 bg-slate-200 animate-pulse rounded-2xl" />)}</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl">
-          {filter === 'pending' ? '🎉 All submissions are graded!' : 'No submissions found.'}
+          {filter === 'pending' ? t('grading', 'allGraded') : t('grading', 'noSubmissions')}
         </div>
       ) : (
         <div className="space-y-3">
@@ -186,7 +189,7 @@ export default function GradingPage() {
                 {isOpen && (
                   <div className="border-t border-slate-200 p-5 bg-slate-50 space-y-4">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Student's Answer</p>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('grading', 'studentAnswer')}</p>
                       <div className="bg-white rounded-xl p-4 ring-1 ring-slate-200 text-sm text-slate-700 whitespace-pre-wrap max-h-48 overflow-y-auto">
                         {sub.content}
                       </div>
@@ -194,7 +197,7 @@ export default function GradingPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-                          Score (max: {sub.max_score})
+                          {t('grading', 'score')} ({t('grading', 'max')}: {sub.max_score})
                         </label>
                         <input
                           type="number"
@@ -207,24 +210,24 @@ export default function GradingPage() {
                         />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Feedback</label>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{t('grading', 'feedback')}</label>
                         <textarea
                           rows={2}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          placeholder="Write feedback for the student..."
+                          placeholder={t('grading', 'feedbackPlaceholder')}
                           value={input.feedback}
                           onChange={(e) => setGradeInputs(prev => ({ ...prev, [sub.id]: { ...input, feedback: e.target.value } }))}
                         />
                       </div>
                     </div>
                     <div className="flex justify-end">
-                      <button
+                      <Button 
                         onClick={() => handleGrade(sub)}
-                        disabled={saving === sub.id}
-                        className="inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60 transition-colors"
+                        variant="primary"
+                        isLoading={saving === sub.id}
                       >
-                        {saving === sub.id ? 'Saving…' : sub.grade_id ? 'Update Grade' : 'Submit Grade'}
-                      </button>
+                        {saving === sub.id ? t('grading', 'saving') : sub.grade_id ? t('grading', 'updateGrade') : t('grading', 'submitGrade')}
+                      </Button>
                     </div>
                   </div>
                 )}

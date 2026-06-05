@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAppSelector } from '../../../store/hooks';
 import apiClient from '../../../lib/api/client';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,7 +82,7 @@ function StarRating({
 
 // ── Review card ──────────────────────────────────────────────────────────────
 
-function ReviewCard({ review, highlight }: { review: Review; highlight?: boolean }) {
+function ReviewCard({ review, highlight, t }: { review: Review; highlight?: boolean; t: (section: 'reviewsPage', key: any) => string }) {
   const isTeacherReview = review._target === 'teacher' || (!review.course_id && review.teacher_id);
   return (
     <div
@@ -95,7 +96,7 @@ function ReviewCard({ review, highlight }: { review: Review; highlight?: boolean
             {(review.student_name || 'S').charAt(0).toUpperCase()}
           </div>
           <div>
-            <p className="font-semibold text-slate-900 text-sm">{review.student_name || 'Student'}</p>
+            <p className="font-semibold text-slate-900 text-sm">{review.student_name || t('reviewsPage', 'studentFallback')}</p>
             <StarRating rating={review.rating} />
           </div>
         </div>
@@ -110,9 +111,9 @@ function ReviewCard({ review, highlight }: { review: Review; highlight?: boolean
             }`}
           >
             {isTeacherReview ? (
-              <><GraduationCap className="w-3 h-3" /> Teacher</>
+              <><GraduationCap className="w-3 h-3" /> {t('reviewsPage', 'teacherBadge')}</>
             ) : (
-              <><BookOpen className="w-3 h-3" /> Course</>
+              <><BookOpen className="w-3 h-3" /> {t('reviewsPage', 'courseBadge')}</>
             )}
           </span>
           {review.course_id && review.course_title && (
@@ -136,7 +137,7 @@ function ReviewCard({ review, highlight }: { review: Review; highlight?: boolean
       {highlight && (
         <div className="mt-3 pl-12">
           <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-            Your course
+            {t('reviewsPage', 'yourCourse')}
           </span>
         </div>
       )}
@@ -151,11 +152,13 @@ function WriteReviewModal({
   teachers,
   onClose,
   onSuccess,
+  t,
 }: {
   enrolledCourses: CourseOption[];
   teachers: TeacherOption[];
   onClose: () => void;
   onSuccess: () => void;
+  t: (section: 'reviewsPage', key: any) => string;
 }) {
   const [step, setStep] = useState<'pick-type' | 'form'>('pick-type');
   const [reviewType, setReviewType] = useState<ReviewTarget | null>(null);
@@ -174,11 +177,11 @@ function WriteReviewModal({
   const handleSubmit = async () => {
     setError('');
     if (reviewType === 'course' && !courseId) {
-      setError('Please select a course.');
+      setError(t('reviewsPage', 'selectCourse'));
       return;
     }
     if (reviewType === 'teacher' && !teacherId) {
-      setError('Please select a teacher.');
+      setError(t('reviewsPage', 'selectTeacher'));
       return;
     }
     setIsSubmitting(true);
@@ -201,7 +204,7 @@ function WriteReviewModal({
       }
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to submit review. Please try again.');
+      setError(err.response?.data?.message || t('reviewsPage', 'submitError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -223,7 +226,7 @@ function WriteReviewModal({
             )}
             <PenLine className="w-5 h-5 text-indigo-600" />
             <h2 className="text-xl font-bold text-slate-900">
-              {step === 'pick-type' ? 'Write a Review' : reviewType === 'course' ? 'Review a Course' : 'Review a Teacher'}
+              {step === 'pick-type' ? t('reviewsPage', 'writeReview') : reviewType === 'course' ? t('reviewsPage', 'reviewACourse') : t('reviewsPage', 'reviewATeacher')}
             </h2>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -236,7 +239,7 @@ function WriteReviewModal({
           {step === 'pick-type' ? (
             /* Step 1 — pick review type */
             <div className="space-y-3">
-              <p className="text-sm text-slate-500 mb-4">What would you like to review?</p>
+              <p className="text-sm text-slate-500 mb-4">{t('reviewsPage', 'whatToReview')}</p>
               <button
                 onClick={() => handlePickType('course')}
                 className="w-full flex items-center gap-4 p-4 rounded-2xl ring-1 ring-slate-200 hover:ring-indigo-300 hover:bg-indigo-50/40 transition-all text-left group"
@@ -245,8 +248,8 @@ function WriteReviewModal({
                   <BookOpen className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">Course Review</p>
-                  <p className="text-sm text-slate-500 mt-0.5">Share your experience with the course material, structure, and content.</p>
+                  <p className="font-semibold text-slate-900">{t('reviewsPage', 'courseReview')}</p>
+                  <p className="text-sm text-slate-500 mt-0.5">{t('reviewsPage', 'courseReviewSub')}</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-slate-400 ml-auto flex-shrink-0 -rotate-90" />
               </button>
@@ -259,8 +262,8 @@ function WriteReviewModal({
                   <GraduationCap className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">Teacher Review</p>
-                  <p className="text-sm text-slate-500 mt-0.5">Rate the teacher's communication, expertise, and teaching style.</p>
+                  <p className="font-semibold text-slate-900">{t('reviewsPage', 'teacherReview')}</p>
+                  <p className="text-sm text-slate-500 mt-0.5">{t('reviewsPage', 'teacherReviewSub')}</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-slate-400 ml-auto flex-shrink-0 -rotate-90" />
               </button>
@@ -272,10 +275,10 @@ function WriteReviewModal({
               {reviewType === 'course' ? (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Course <span className="text-red-500">*</span>
+                    {t('reviewsPage', 'courseRequired')} <span className="text-red-500">*</span>
                   </label>
                   {enrolledCourses.length === 0 ? (
-                    <p className="text-sm text-slate-500 italic">You are not enrolled in any courses yet.</p>
+                    <p className="text-sm text-slate-500 italic">{t('reviewsPage', 'notEnrolled')}</p>
                   ) : (
                     <select
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -291,18 +294,18 @@ function WriteReviewModal({
               ) : (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Teacher <span className="text-red-500">*</span>
+                    {t('reviewsPage', 'teacherRequired')} <span className="text-red-500">*</span>
                   </label>
                   {teachers.length === 0 ? (
-                    <p className="text-sm text-slate-500 italic">No teachers found.</p>
+                    <p className="text-sm text-slate-500 italic">{t('reviewsPage', 'noTeachers')}</p>
                   ) : (
                     <select
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                       value={teacherId ?? ''}
                       onChange={(e) => setTeacherId(Number(e.target.value))}
                     >
-                      {teachers.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
+                      {teachers.map((teacher) => (
+                        <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
                       ))}
                     </select>
                   )}
@@ -311,7 +314,7 @@ function WriteReviewModal({
 
               {/* Star rating */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Rating</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{t('reviewsPage', 'ratingField')}</label>
                 <div className="flex items-center gap-3">
                   <StarRating rating={rating} interactive onSet={setRating} size="lg" />
                   <span className="text-sm font-semibold text-slate-600">{rating} / 5</span>
@@ -320,14 +323,14 @@ function WriteReviewModal({
 
               {/* Comment */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Comment (optional)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('reviewsPage', 'commentOptional')}</label>
                 <textarea
                   rows={3}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                   placeholder={
                     reviewType === 'course'
-                      ? 'Share your experience with this course…'
-                      : 'Describe the teacher\'s teaching style, communication, expertise…'
+                      ? t('reviewsPage', 'coursePlaceholder')
+                      : t('reviewsPage', 'teacherPlaceholder')
                   }
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
@@ -343,7 +346,7 @@ function WriteReviewModal({
                   onClick={onClose}
                   className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
                 >
-                  Cancel
+                  {t('reviewsPage', 'cancel')}
                 </button>
                 <button
                   onClick={handleSubmit}
@@ -358,7 +361,7 @@ function WriteReviewModal({
                       : 'bg-indigo-600 hover:bg-indigo-500'
                   }`}
                 >
-                  {isSubmitting ? 'Submitting…' : 'Submit Review'}
+                  {isSubmitting ? t('reviewsPage', 'submitting') : t('reviewsPage', 'submitReview')}
                 </button>
               </div>
             </div>
@@ -373,6 +376,7 @@ function WriteReviewModal({
 
 export default function ReviewsPage() {
   const { user, isLoading: authLoading } = useAppSelector((s) => s.auth);
+  const { t } = useTranslation();
   const isTeacher = user?.role === 'teacher';
   const isStudent = user?.role === 'student';
 
@@ -487,7 +491,7 @@ export default function ReviewsPage() {
 
   const handleReviewSuccess = async () => {
     setShowWriteModal(false);
-    setSuccessMsg('Your review was submitted successfully!');
+    setSuccessMsg(t('reviewsPage', 'successMsg'));
     setTimeout(() => setSuccessMsg(''), 4000);
     await loadReviews();
   };
@@ -522,11 +526,11 @@ export default function ReviewsPage() {
       {/* Header */}
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Reviews</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('reviewsPage', 'title')}</h1>
           <p className="mt-1 text-sm text-slate-600">
             {isTeacher
-              ? 'See all student reviews. Your course reviews are highlighted.'
-              : 'Browse course and teacher reviews across the platform.'}
+              ? t('reviewsPage', 'subtitleTeacher')
+              : t('reviewsPage', 'subtitleStudent')}
           </p>
         </div>
         {isStudent && (
@@ -535,7 +539,7 @@ export default function ReviewsPage() {
             className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 shadow-sm transition-colors"
           >
             <PenLine className="w-4 h-4" />
-            Write a Review
+            {t('reviewsPage', 'writeReview')}
           </button>
         )}
       </header>
@@ -555,21 +559,21 @@ export default function ReviewsPage() {
             <MessageSquare className="w-4 h-4 text-slate-400" />
           </div>
           <p className="text-2xl font-bold text-slate-900">{allReviews.length}</p>
-          <p className="text-xs text-slate-500 mt-0.5">Total reviews</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t('reviewsPage', 'totalReviews')}</p>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200">
           <div className="flex items-center justify-between mb-1">
             <BarChart3 className="w-4 h-4 text-slate-400" />
           </div>
           <p className="text-2xl font-bold text-slate-900">{avgRating}</p>
-          <p className="text-xs text-slate-500 mt-0.5">Avg rating</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t('reviewsPage', 'avgRating')}</p>
         </div>
         <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200">
           <div className="flex items-center justify-between mb-1">
             <BookOpen className="w-4 h-4 text-blue-500" />
           </div>
           <p className="text-2xl font-bold text-blue-600">{courseReviewCount}</p>
-          <p className="text-xs text-slate-500 mt-0.5">Course reviews</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t('reviewsPage', 'courseReviews')}</p>
         </div>
         {isTeacher ? (
           <div className="bg-indigo-50 rounded-2xl p-4 shadow-sm ring-1 ring-indigo-200">
@@ -577,7 +581,7 @@ export default function ReviewsPage() {
               <Users className="w-4 h-4 text-indigo-400" />
             </div>
             <p className="text-2xl font-bold text-indigo-700">{myReviewCount}</p>
-            <p className="text-xs text-indigo-500 mt-0.5">Reviews for you</p>
+            <p className="text-xs text-indigo-500 mt-0.5">{t('reviewsPage', 'reviewsForYou')}</p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200">
@@ -585,7 +589,7 @@ export default function ReviewsPage() {
               <GraduationCap className="w-4 h-4 text-purple-500" />
             </div>
             <p className="text-2xl font-bold text-purple-600">{teacherReviewCount}</p>
-            <p className="text-xs text-slate-500 mt-0.5">Teacher reviews</p>
+            <p className="text-xs text-slate-500 mt-0.5">{t('reviewsPage', 'teacherReviews')}</p>
           </div>
         )}
       </div>
@@ -594,12 +598,12 @@ export default function ReviewsPage() {
       <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200 space-y-3">
         {/* Type filter */}
         <div className="flex items-center gap-3 flex-wrap">
-          <label className="text-sm font-medium text-slate-700 flex-shrink-0">Type:</label>
+          <label className="text-sm font-medium text-slate-700 flex-shrink-0">{t('reviewsPage', 'typeLabel')}</label>
           <div className="flex gap-2">
             {([
-              { key: 'all', label: 'All', icon: <MessageSquare className="w-3.5 h-3.5" /> },
-              { key: 'course', label: 'Courses', icon: <BookOpen className="w-3.5 h-3.5" /> },
-              { key: 'teacher', label: 'Teachers', icon: <GraduationCap className="w-3.5 h-3.5" /> },
+              { key: 'all', label: t('reviewsPage', 'allFilter'), icon: <MessageSquare className="w-3.5 h-3.5" /> },
+              { key: 'course', label: t('reviewsPage', 'coursesFilter'), icon: <BookOpen className="w-3.5 h-3.5" /> },
+              { key: 'teacher', label: t('reviewsPage', 'teachersFilter'), icon: <GraduationCap className="w-3.5 h-3.5" /> },
             ] as const).map(({ key, label, icon }) => (
               <button
                 key={key}
@@ -623,27 +627,27 @@ export default function ReviewsPage() {
         {/* Teacher filter (only visible for teacher type or all) */}
         {teachers.length > 0 && typeFilter !== 'course' && (
           <div className="flex items-center gap-3 flex-wrap">
-            <label className="text-sm font-medium text-slate-700 flex-shrink-0">Teacher:</label>
+            <label className="text-sm font-medium text-slate-700 flex-shrink-0">{t('reviewsPage', 'teacherLabel')}</label>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedTeacherId('all')}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedTeacherId === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
               >
-                All
+                {t('reviewsPage', 'allFilter')}
               </button>
-              {teachers.map((t) => (
+              {teachers.map((teacher) => (
                 <button
-                  key={t.id}
-                  onClick={() => setSelectedTeacherId(t.id)}
+                  key={teacher.id}
+                  onClick={() => setSelectedTeacherId(teacher.id)}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    selectedTeacherId === t.id
-                      ? Number(t.id) === Number(user?.id) ? 'bg-purple-600 text-white' : 'bg-slate-800 text-white'
+                    selectedTeacherId === teacher.id
+                      ? Number(teacher.id) === Number(user?.id) ? 'bg-purple-600 text-white' : 'bg-slate-800 text-white'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
-                  {t.name}
-                  {Number(t.id) === Number(user?.id) && isTeacher && (
-                    <span className="ml-1 opacity-70">(you)</span>
+                  {teacher.name}
+                  {Number(teacher.id) === Number(user?.id) && isTeacher && (
+                    <span className="ml-1 opacity-70">{t('reviewsPage', 'you')}</span>
                   )}
                 </button>
               ))}
@@ -653,13 +657,13 @@ export default function ReviewsPage() {
 
         {/* Rating filter */}
         <div className="flex items-center gap-3 flex-wrap">
-          <label className="text-sm font-medium text-slate-700 flex-shrink-0">Rating:</label>
+          <label className="text-sm font-medium text-slate-700 flex-shrink-0">{t('reviewsPage', 'ratingLabel')}</label>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setRatingFilter(0)}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${ratingFilter === 0 ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
             >
-              All
+              {t('reviewsPage', 'allFilter')}
             </button>
             {[5, 4, 3, 2, 1].map((n) => (
               <button
@@ -687,28 +691,29 @@ export default function ReviewsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500">
           <MessageSquare className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-          <p className="font-medium">No reviews found</p>
-          <p className="text-sm mt-1">Try adjusting the filters above.</p>
+          <p className="font-medium">{t('reviewsPage', 'noReviewsFound')}</p>
+          <p className="text-sm mt-1">{t('reviewsPage', 'tryFilters')}</p>
           {isStudent && (
             <button
               onClick={() => setShowWriteModal(true)}
               className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-500"
             >
               <PenLine className="w-4 h-4" />
-              Be the first to write a review
+              {t('reviewsPage', 'beFirst')}
             </button>
           )}
         </div>
       ) : (
         <div className="space-y-3">
           <p className="text-xs text-slate-500 pl-1">
-            {filtered.length} review{filtered.length !== 1 ? 's' : ''}
+            {filtered.length} {filtered.length !== 1 ? t('reviewsPage', 'reviewsCount') : t('reviewsPage', 'reviewCount')}
           </p>
           {filtered.map((review) => (
             <ReviewCard
               key={`${review._target}-${review.id}`}
               review={review}
               highlight={isTeacher && Number(review.teacher_id) === Number(user?.id)}
+              t={t}
             />
           ))}
         </div>
@@ -721,6 +726,7 @@ export default function ReviewsPage() {
           teachers={teachers}
           onClose={() => setShowWriteModal(false)}
           onSuccess={handleReviewSuccess}
+          t={t}
         />
       )}
     </div>

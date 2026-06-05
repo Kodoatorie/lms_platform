@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAppSelector } from '../../store/hooks';
 import apiClient from '../../lib/api/client';
+import { useTranslation } from '../../lib/i18n/useTranslation';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -125,7 +126,7 @@ function EmptyState({ icon: Icon, title, sub, href, linkLabel }: {
 
 // ── Teacher dashboard ────────────────────────────────────────────────────────
 
-function TeacherDashboard({ userId }: { userId: number }) {
+function TeacherDashboard({ userId, t }: { userId: number; t: (section: 'dashboard', key: any) => string }) {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [pending, setPending] = useState<PendingSubmission[]>([]);
@@ -204,19 +205,19 @@ function TeacherDashboard({ userId }: { userId: number }) {
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard icon={Users}       label="Total Students"      value={loading ? '—' : totalStudents}                     color="indigo" loading={loading} />
-        <StatCard icon={BookOpen}    label="Active Courses"       value={loading ? '—' : courses.length}                   color="green"  loading={loading} />
-        <StatCard icon={BarChart3}   label="Avg Completion Rate"  value={loading ? '—' : `${avgCompletion}%`}               color="purple" loading={loading} />
+        <StatCard icon={Users}       label={t('dashboard', 'totalStudents')}      value={loading ? '—' : totalStudents}                     color="indigo" loading={loading} />
+        <StatCard icon={BookOpen}    label={t('dashboard', 'activeCourses')}       value={loading ? '—' : courses.length}                   color="green"  loading={loading} />
+        <StatCard icon={BarChart3}   label={t('dashboard', 'avgCompletionRate')}  value={loading ? '—' : `${avgCompletion}%`}               color="purple" loading={loading} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Courses list */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h2 className="text-base font-semibold text-slate-900">Your Courses</h2>
+            <h2 className="text-base font-semibold text-slate-900">{t('dashboard', 'yourCourses')}</h2>
             <Link href="/dashboard/manage-courses"
               className="text-xs text-indigo-600 hover:text-indigo-500 font-medium flex items-center gap-0.5">
-              Manage <ChevronRight className="w-3.5 h-3.5" />
+              {t('dashboard', 'manage')} <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
           {loading ? (
@@ -224,23 +225,29 @@ function TeacherDashboard({ userId }: { userId: number }) {
               {[1,2,3].map((i) => <div key={i} className="h-14 bg-slate-100 animate-pulse rounded-xl" />)}
             </div>
           ) : courses.length === 0 ? (
-            <EmptyState icon={BookOpen} title="No courses yet"
-              sub="Create your first course to get started."
-              href="/dashboard/manage-courses" linkLabel="Create course" />
+            <EmptyState icon={BookOpen} title={t('dashboard', 'noCourseTitle')}
+              sub={t('dashboard', 'noCourseSub')}
+              href="/dashboard/manage-courses" linkLabel={t('dashboard', 'createCourse')} />
           ) : (
             <ul className="divide-y divide-slate-100">
               {courses.slice(0, 6).map((course) => (
                 <li key={course.id}>
                   <Link href={`/dashboard/courses/${course.id}`}
                     className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {course.title.charAt(0).toUpperCase()}
+                    <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600">
+                      {(course as any).cover_url ? (
+                        <img src={(course as any).cover_url} alt={course.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
+                          {course.title.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-900 truncate">{course.title}</p>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        {course.student_count != null ? `${course.student_count} students` : 'Loading…'}
-                        {course.avg_score != null && ` · avg ${course.avg_score.toFixed(0)}%`}
+                        {course.student_count != null ? `${course.student_count} ${t('dashboard', 'students')}` : t('dashboard', 'loading')}
+                        {course.avg_score != null && ` · ${t('dashboard', 'avg')} ${course.avg_score.toFixed(0)}%`}
                       </p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
@@ -254,10 +261,10 @@ function TeacherDashboard({ userId }: { userId: number }) {
         {/* Pending submissions */}
         <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h2 className="text-base font-semibold text-slate-900">Pending Reviews</h2>
+            <h2 className="text-base font-semibold text-slate-900">{t('dashboard', 'pendingReviews')}</h2>
             <Link href="/dashboard/grading"
               className="text-xs text-indigo-600 hover:text-indigo-500 font-medium flex items-center gap-0.5">
-              All <ChevronRight className="w-3.5 h-3.5" />
+              {t('dashboard', 'allLink')} <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
           {loading ? (
@@ -265,8 +272,8 @@ function TeacherDashboard({ userId }: { userId: number }) {
               {[1,2,3].map((i) => <div key={i} className="h-12 bg-slate-100 animate-pulse rounded-xl" />)}
             </div>
           ) : pending.length === 0 ? (
-            <EmptyState icon={CheckCircle2} title="All caught up!"
-              sub="No submissions awaiting review." />
+            <EmptyState icon={CheckCircle2} title={t('dashboard', 'allCaughtUp')}
+              sub={t('dashboard', 'noSubmissions')} />
           ) : (
             <ul className="divide-y divide-slate-100">
               {pending.map((s) => (
@@ -296,7 +303,7 @@ function TeacherDashboard({ userId }: { userId: number }) {
 
 // ── Student dashboard ────────────────────────────────────────────────────────
 
-function StudentDashboard({ userId }: { userId: number }) {
+function StudentDashboard({ userId, t }: { userId: number; t: (section: 'dashboard', key: any) => string }) {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [enrollments, setEnrollments] = useState<EnrolledCourse[]>([]);
   const [pendingGrades, setPendingGrades] = useState<any[]>([]);
@@ -340,10 +347,10 @@ function StudentDashboard({ userId }: { userId: number }) {
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={BookOpen}      label="Enrolled Courses"  value={loading ? '—' : enrollments.length}                      color="indigo" loading={loading} />
-        <StatCard icon={CheckCircle2}  label="Completed"         value={loading ? '—' : completed.length}                         color="green"  loading={loading} />
-        <StatCard icon={Zap}           label="In Progress"       value={loading ? '—' : inProgress.length}                        color="amber"  loading={loading} />
-        <StatCard icon={Target}        label="Avg Score"
+        <StatCard icon={BookOpen}      label={t('dashboard', 'enrolledCourses')}  value={loading ? '—' : enrollments.length}                      color="indigo" loading={loading} />
+        <StatCard icon={CheckCircle2}  label={t('dashboard', 'completed')}         value={loading ? '—' : completed.length}                         color="green"  loading={loading} />
+        <StatCard icon={Zap}           label={t('dashboard', 'inProgress')}       value={loading ? '—' : inProgress.length}                        color="amber"  loading={loading} />
+        <StatCard icon={Target}        label={t('dashboard', 'avgScore')}
           value={loading ? '—' : stats?.average_score ? `${Number(stats.average_score).toFixed(0)}%` : '—'}
           color="purple" loading={loading} />
       </div>
@@ -352,10 +359,10 @@ function StudentDashboard({ userId }: { userId: number }) {
         {/* Continue learning */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h2 className="text-base font-semibold text-slate-900">Continue Learning</h2>
+            <h2 className="text-base font-semibold text-slate-900">{t('dashboard', 'continueLearning')}</h2>
             <Link href="/dashboard/courses"
               className="text-xs text-indigo-600 hover:text-indigo-500 font-medium flex items-center gap-0.5">
-              All courses <ChevronRight className="w-3.5 h-3.5" />
+              {t('dashboard', 'allCourses')} <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
           {loading ? (
@@ -363,9 +370,9 @@ function StudentDashboard({ userId }: { userId: number }) {
               {[1,2,3].map((i) => <div key={i} className="h-16 bg-slate-100 animate-pulse rounded-xl" />)}
             </div>
           ) : inProgress.length === 0 && completed.length === 0 ? (
-            <EmptyState icon={BookOpen} title="No enrolled courses"
-              sub="Browse the catalog and start learning."
-              href="/dashboard/courses" linkLabel="Explore courses" />
+            <EmptyState icon={BookOpen} title={t('dashboard', 'noEnrolledTitle')}
+              sub={t('dashboard', 'noEnrolledSub')}
+              href="/dashboard/courses" linkLabel={t('dashboard', 'exploreCourses')} />
           ) : (
             <ul className="divide-y divide-slate-100">
               {[...inProgress, ...completed.slice(0, 2)].slice(0, 6).map((enrollment) => {
@@ -396,7 +403,7 @@ function StudentDashboard({ userId }: { userId: number }) {
                           <ProgressBar pct={pct} />
                         </div>
                         <p className="text-xs text-slate-400 mt-1">
-                          {enrollment.completed ? 'Completed ✓' : `${Math.round(pct)}% complete`}
+                          {enrollment.completed ? t('dashboard', 'completedCheck') : `${Math.round(pct)}${t('dashboard', 'percentComplete')}`}
                         </p>
                       </div>
                     </Link>
@@ -410,10 +417,10 @@ function StudentDashboard({ userId }: { userId: number }) {
         {/* Awaiting grades */}
         <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h2 className="text-base font-semibold text-slate-900">Awaiting Grades</h2>
+            <h2 className="text-base font-semibold text-slate-900">{t('dashboard', 'awaitingGrades')}</h2>
             <Link href="/dashboard/grades"
               className="text-xs text-indigo-600 hover:text-indigo-500 font-medium flex items-center gap-0.5">
-              All grades <ChevronRight className="w-3.5 h-3.5" />
+              {t('dashboard', 'allGrades')} <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
           {loading ? (
@@ -421,8 +428,8 @@ function StudentDashboard({ userId }: { userId: number }) {
               {[1,2,3].map((i) => <div key={i} className="h-12 bg-slate-100 animate-pulse rounded-xl" />)}
             </div>
           ) : pendingGrades.length === 0 ? (
-            <EmptyState icon={Award} title="No pending grades"
-              sub="All your submissions have been reviewed." />
+            <EmptyState icon={Award} title={t('dashboard', 'noPendingTitle')}
+              sub={t('dashboard', 'noPendingSub')} />
           ) : (
             <ul className="divide-y divide-slate-100">
               {pendingGrades.map((s, idx) => (
@@ -456,12 +463,13 @@ function StudentDashboard({ userId }: { userId: number }) {
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAppSelector((s) => s.auth);
+  const { t } = useTranslation();
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return t('dashboard', 'goodMorning');
+    if (h < 18) return t('dashboard', 'goodAfternoon');
+    return t('dashboard', 'goodEvening');
   };
 
   if (authLoading || !user) {
@@ -476,10 +484,11 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('dashboard', 'title')}</h1>
           <p className="mt-1.5 text-sm text-slate-500">
-            {greeting()}! Here's what's happening with your{' '}
-            {user.role === 'teacher' ? 'courses' : 'learning'} today.
+            {greeting()}! {user.role === 'teacher'
+              ? t('dashboard', 'subtitleTeacher')
+              : t('dashboard', 'subtitleStudent')}
           </p>
         </div>
         <div className="flex items-center gap-2 bg-white rounded-2xl px-4 py-2.5 shadow-sm ring-1 ring-slate-200">
@@ -494,9 +503,9 @@ export default function DashboardPage() {
       </header>
 
       {user.role === 'teacher' ? (
-        <TeacherDashboard userId={user.id} />
+        <TeacherDashboard userId={user.id} t={t} />
       ) : (
-        <StudentDashboard userId={user.id} />
+        <StudentDashboard userId={user.id} t={t} />
       )}
     </div>
   );

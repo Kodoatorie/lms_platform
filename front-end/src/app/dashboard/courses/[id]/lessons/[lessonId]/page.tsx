@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { useAppSelector } from '../../../../../../store/hooks';
 import { ErrorBoundary } from '../../../../../../components/ErrorBoundary';
 import apiClient from '../../../../../../lib/api/client';
+import { useTranslation } from '../../../../../../lib/i18n/useTranslation';
 import { MarkdownEditor, MarkdownPreview } from '../../../../../../components/MarkdownEditor';
+import { LessonMaterials } from '../../../../../../components/LessonMaterials';
 
 type LessonError = { status: 403 | 404 | 500 | null; message: string };
 
@@ -34,6 +36,7 @@ interface ExistingSubmission {
 }
 
 function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: boolean }) {
+  const { t } = useTranslation();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Record<number, ExistingSubmission>>({});
   const [loadingHW, setLoadingHW] = useState(true);
@@ -73,11 +76,11 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
     const link = draftLink[assignment.id] || '';
 
     if (!content.trim() && !link.trim()) {
-      setErrors((p) => ({ ...p, [assignment.id]: 'Enter your answer or a Google Drive link.' }));
+      setErrors((p) => ({ ...p, [assignment.id]: t('homework', 'enterAnswer') }));
       return;
     }
     if (link && !/^https:\/\/(drive|docs)\.google\.com\//.test(link)) {
-      setErrors((p) => ({ ...p, [assignment.id]: 'Link must be a valid Google Drive or Docs URL.' }));
+      setErrors((p) => ({ ...p, [assignment.id]: t('homework', 'invalidLink') }));
       return;
     }
 
@@ -94,7 +97,7 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
       setSuccess((p) => ({ ...p, [assignment.id]: true }));
       setTimeout(() => setSuccess((p) => ({ ...p, [assignment.id]: false })), 3000);
     } catch (err: any) {
-      setErrors((p) => ({ ...p, [assignment.id]: err.response?.data?.message || 'Submission failed.' }));
+      setErrors((p) => ({ ...p, [assignment.id]: err.response?.data?.message || t('homework', 'submissionFailed') }));
     } finally {
       setSubmitting(null);
     }
@@ -110,7 +113,7 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <h2 className="text-lg font-bold text-slate-900">
-          Homework {assignments.length > 1 ? `(${assignments.length})` : ''}
+          {t('homework', 'title')} {assignments.length > 1 ? `(${assignments.length})` : ''}
         </h2>
       </div>
 
@@ -135,13 +138,13 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                   <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">
-                    Max: {assignment.max_score} pts
+                    {t('homework', 'maxPts')} {assignment.max_score} {t('homework', 'pts')}
                   </span>
                   {assignment.due_date && (
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                       isOverdue ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'
                     }`}>
-                      Due: {new Date(assignment.due_date).toLocaleDateString()}
+                      {t('lessons', 'due')} {new Date(assignment.due_date).toLocaleDateString()}
                     </span>
                   )}
                 </div>
@@ -151,7 +154,7 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
             <div className="p-5">
               {/* Teacher view: show assignment info only */}
               {isTeacher ? (
-                <p className="text-sm text-slate-500 italic">Students can submit their work here.</p>
+                <p className="text-sm text-slate-500 italic">{t('homework', 'studentsCanSubmit')}</p>
               ) : isGraded ? (
                 /* Already graded */
                 <div className="space-y-3">
@@ -160,7 +163,7 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Graded: {existing.score}/{assignment.max_score}
+                      {t('homework', 'graded')} {existing.score}/{assignment.max_score}
                     </span>
                     <span className="text-xs text-slate-400">
                       {new Date(existing.graded_at!).toLocaleDateString()}
@@ -168,19 +171,19 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
                   </div>
                   {existing.feedback && (
                     <div className="bg-indigo-50 rounded-xl p-3 text-sm text-slate-700">
-                      <p className="text-xs font-semibold text-indigo-500 mb-1">Teacher feedback</p>
+                      <p className="text-xs font-semibold text-indigo-500 mb-1">{t('homework', 'teacherFeedback')}</p>
                       {existing.feedback}
                     </div>
                   )}
                   <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500">
-                    <p className="font-medium mb-1">Your submission:</p>
+                    <p className="font-medium mb-1">{t('homework', 'yourSubmission')}</p>
                     {existing.google_drive_link && (
                       <a href={existing.google_drive_link} target="_blank" rel="noopener noreferrer"
                         className="text-indigo-500 hover:underline flex items-center gap-1">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                         </svg>
-                        Google Drive link ↗
+                        {t('homework', 'googleDriveLink')} ↗
                       </a>
                     )}
                     {existing.content && <p className="mt-1 whitespace-pre-wrap">{existing.content}</p>}
@@ -191,22 +194,22 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
                 <div className="space-y-3">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                    Submitted — awaiting review
+                    {t('homework', 'submittedAwaiting')}
                   </span>
                   <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500">
-                    <p className="font-medium mb-1">Your submission:</p>
+                    <p className="font-medium mb-1">{t('homework', 'yourSubmission')}</p>
                     {existing.google_drive_link && (
                       <a href={existing.google_drive_link} target="_blank" rel="noopener noreferrer"
                         className="text-indigo-500 hover:underline flex items-center gap-1">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                         </svg>
-                        Google Drive link ↗
+                        {t('homework', 'googleDriveLink')} ↗
                       </a>
                     )}
                     {existing.content && <p className="mt-1 whitespace-pre-wrap">{existing.content}</p>}
                     <p className="mt-1 text-slate-400">
-                      Submitted {new Date(existing.submitted_at).toLocaleDateString()}
+                      {t('homework', 'submitted')} {new Date(existing.submitted_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -216,12 +219,12 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
                   {/* Text answer */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                      Written answer
+                      {t('homework', 'writtenAnswer')}
                     </label>
                     <textarea
                       rows={4}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                      placeholder="Type your answer here…"
+                      placeholder={t('homework', 'typePlaceholder')}
                       value={content}
                       onChange={(e) => setDraftContent((p) => ({ ...p, [assignment.id]: e.target.value }))}
                     />
@@ -230,14 +233,14 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
                   {/* OR divider */}
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-px bg-slate-200" />
-                    <span className="text-xs text-slate-400 font-medium">or</span>
+                    <span className="text-xs text-slate-400 font-medium">{t('homework', 'or')}</span>
                     <div className="flex-1 h-px bg-slate-200" />
                   </div>
 
                   {/* Google Drive link */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                      Google Drive link
+                      {t('homework', 'googleDriveLink')}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -254,7 +257,7 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
                       />
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
-                      Make sure your file is shared with &quot;Anyone with the link&quot;.
+                      {t('homework', 'shareLinkHint')}
                     </p>
                   </div>
 
@@ -265,7 +268,7 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
                   )}
                   {success[assignment.id] && (
                     <p className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">
-                      ✅ Submitted successfully!
+                      {t('homework', 'submittedSuccess')}
                     </p>
                   )}
 
@@ -281,14 +284,14 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
-                          Submitting…
+                          {t('homework', 'submitting')}
                         </>
                       ) : (
                         <>
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                           </svg>
-                          Submit Homework
+                          {t('homework', 'submitHomework')}
                         </>
                       )}
                     </button>
@@ -305,20 +308,21 @@ function HomeworkPanel({ lessonId, isTeacher }: { lessonId: number; isTeacher: b
 // ────────────────────────────────────────────────────────────────────────────
 
 function LessonErrorState({ error, courseId }: { error: LessonError; courseId: number }) {
+  const { t } = useTranslation();
   if (error.status === 403) {
     return (
       <div className="flex items-center justify-center h-full p-10">
         <div className="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-amber-200 max-w-md w-full text-center space-y-4">
           <div className="text-5xl">🔒</div>
-          <h2 className="text-xl font-bold text-slate-900">Lesson not available yet</h2>
+          <h2 className="text-xl font-bold text-slate-900">{t('lessons', 'lockedLesson')}</h2>
           <p className="text-sm text-slate-500">
-            This lesson hasn't opened yet. Check back when the access date arrives.
+            {t('lessons', 'lessonNotAvailableDesc')}
           </p>
           <Link
             href={`/dashboard/courses/${courseId}`}
             className="inline-flex items-center text-sm font-medium text-indigo-600 hover:underline"
           >
-            ← Back to course
+            ← {t('lessons', 'backToCourse')}
           </Link>
         </div>
       </div>
@@ -330,15 +334,15 @@ function LessonErrorState({ error, courseId }: { error: LessonError; courseId: n
       <div className="flex items-center justify-center h-full p-10">
         <div className="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-slate-200 max-w-md w-full text-center space-y-4">
           <div className="text-5xl">📭</div>
-          <h2 className="text-xl font-bold text-slate-900">Lesson not found</h2>
+          <h2 className="text-xl font-bold text-slate-900">{t('lessons', 'lessonNotFound')}</h2>
           <p className="text-sm text-slate-500">
-            This lesson may have been removed by the teacher.
+            {t('lessons', 'lessonNotFoundDesc')}
           </p>
           <Link
             href={`/dashboard/courses/${courseId}`}
             className="inline-flex items-center text-sm font-medium text-indigo-600 hover:underline"
           >
-            ← Back to course
+            ← {t('lessons', 'backToCourse')}
           </Link>
         </div>
       </div>
@@ -349,20 +353,20 @@ function LessonErrorState({ error, courseId }: { error: LessonError; courseId: n
     <div className="flex items-center justify-center h-full p-10">
       <div className="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-red-200 max-w-md w-full text-center space-y-4">
         <div className="text-5xl">⚠️</div>
-        <h2 className="text-xl font-bold text-slate-900">Something went wrong</h2>
+        <h2 className="text-xl font-bold text-slate-900">{t('lessons', 'somethingWentWrong')}</h2>
         <p className="text-sm text-slate-500">{error.message}</p>
         <div className="flex justify-center gap-3">
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500"
           >
-            Retry
+            {t('common', 'retry')}
           </button>
           <Link
             href={`/dashboard/courses/${courseId}`}
             className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200"
           >
-            Back to course
+            {t('lessons', 'backToCourse')}
           </Link>
         </div>
       </div>
@@ -377,6 +381,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
 
   const { user } = useAppSelector((s) => s.auth);
   const isTeacher = user?.role === 'teacher';
+  const { t } = useTranslation();
 
   const [curriculum, setCurriculum] = useState<any[]>([]);
   const [lesson, setLesson] = useState<any>(null);
@@ -408,11 +413,11 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
         if (cancelled) return;
         const status = err.response?.status;
         if (status === 403) {
-          setLessonError({ status: 403, message: 'This lesson is not available yet.' });
+          setLessonError({ status: 403, message: t('lessons', 'notAvailableYet') });
         } else if (status === 404) {
-          setLessonError({ status: 404, message: 'Lesson not found.' });
+          setLessonError({ status: 404, message: t('lessons', 'lessonNotFound') });
         } else {
-          setLessonError({ status: 500, message: err.response?.data?.message || 'Failed to load lesson.' });
+          setLessonError({ status: 500, message: err.response?.data?.message || t('lessons', 'failedToLoad') });
         }
       }
 
@@ -456,7 +461,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
       if (!videoId) {
         return (
           <div className="bg-white rounded-xl p-8 ring-1 ring-slate-200 text-center text-slate-500">
-            <p className="font-medium">Invalid YouTube URL</p>
+            <p className="font-medium">{t('lessons', 'invalidYoutubeUrl')}</p>
             {lesson.content && (
               <a href={lesson.content} target="_blank" rel="noopener noreferrer"
                 className="mt-2 inline-block text-indigo-600 hover:underline text-sm">{lesson.content}</a>
@@ -491,13 +496,13 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            Author: <span className="font-medium text-slate-600">{lesson.author_name}</span>
+            {t('lessons', 'author')} <span className="font-medium text-slate-600">{lesson.author_name}</span>
           </p>
         )}
         <div className="prose max-w-none">
           {lesson.content
             ? <MarkdownPreview content={lesson.content} />
-            : <span className="italic text-slate-400">No content provided for this lesson.</span>}
+            : <span className="italic text-slate-400">{t('lessons', 'noContent')}</span>}
         </div>
       </div>
     );
@@ -514,7 +519,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
-              Back to Course
+              {t('lessons', 'backToCourse')}
             </Link>
           </div>
 
@@ -541,7 +546,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
                           <div className="min-w-0">
                             <p className="truncate text-slate-500 text-xs font-medium">{l.title}</p>
                             <p className="text-[10px] text-slate-400">
-                              Opens {new Date(l.available_from).toLocaleDateString()}
+                              {t('lessons', 'opensOn')} {new Date(l.available_from).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
@@ -578,7 +583,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
                     );
                   })}
                   {mod.lessons.length === 0 && (
-                    <p className="text-xs text-slate-400 italic px-3">No lessons</p>
+                    <p className="text-xs text-slate-400 italic px-3">{t('lessons', 'noLessons')}</p>
                   )}
                 </div>
               </div>
@@ -600,7 +605,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
           ) : lessonError ? (
             <LessonErrorState error={lessonError} courseId={courseId} />
           ) : !lesson ? (
-            <LessonErrorState error={{ status: 404, message: 'Lesson not found.' }} courseId={courseId} />
+            <LessonErrorState error={{ status: 404, message: t('lessons', 'lessonNotFound') }} courseId={courseId} />
           ) : (
             <>
               {/* Header */}
@@ -609,18 +614,18 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
                   <div className="min-w-0">
                     <h1 className="text-2xl font-bold text-slate-900 truncate">{lesson.title}</h1>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                      <span className="capitalize">{lesson.content_type} lesson</span>
+                      <span className="capitalize">{lesson.content_type} {t('lessons', 'lesson')}</span>
                       {lesson.author_name && (
                         <>
                           <span>·</span>
-                          <span>by <strong className="text-slate-700">{lesson.author_name}</strong></span>
+                          <span>{t('lessons', 'by')} <strong className="text-slate-700">{lesson.author_name}</strong></span>
                         </>
                       )}
                       {lesson.deadline && (
                         <>
                           <span>·</span>
                           <span className={new Date(lesson.deadline) < new Date() ? 'text-red-500' : 'text-amber-600'}>
-                            Due: {new Date(lesson.deadline).toLocaleDateString()}
+                            {t('lessons', 'due')} {new Date(lesson.deadline).toLocaleDateString()}
                           </span>
                         </>
                       )}
@@ -646,7 +651,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
                               d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                               clipRule="evenodd" />
                           </svg>
-                          Completed
+                          {t('lessons', 'completed')}
                         </>
                       ) : isCompleting ? (
                         <>
@@ -654,14 +659,14 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
-                          Marking…
+                          {t('lessons', 'marking')}
                         </>
                       ) : (
                         <>
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                           </svg>
-                          Mark Complete
+                          {t('lessons', 'markComplete')}
                         </>
                       )}
                     </button>
@@ -675,6 +680,13 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; l
                   {renderContent()}
                   {!isLoading && lesson && (
                     <HomeworkPanel lessonId={currentLessonId} isTeacher={isTeacher} />
+                  )}
+                  {!isLoading && lesson && (
+                    <LessonMaterials
+                      lessonId={currentLessonId}
+                      courseId={courseId}
+                      isTeacher={isTeacher}
+                    />
                   )}
                 </div>
               </div>

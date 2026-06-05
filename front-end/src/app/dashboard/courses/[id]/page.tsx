@@ -9,6 +9,8 @@ import apiClient from '../../../../lib/api/client';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
 import { MarkdownEditor } from '../../../../components/MarkdownEditor';
+import { FileUploader } from '../../../../components/FileUploader';
+import { useTranslation } from '../../../../lib/i18n/useTranslation';
 
 interface LessonData {
   id: number;
@@ -71,6 +73,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   const { currentCourse, isLoading, error } = useAppSelector((s) => s.courses);
   const { user } = useAppSelector((s) => s.auth);
   const isTeacher = user?.role === 'teacher';
+  const { t } = useTranslation();
 
   const [curriculum, setCurriculum] = useState<ModuleData[]>([]);
   const [isEnrolling, setIsEnrolling] = useState(false);
@@ -323,8 +326,8 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
   if (error || !currentCourse) {
     return (
       <div className="text-center py-12">
-        <h3 className="text-xl font-bold text-slate-900">Failed to load course</h3>
-        <Link href="/dashboard/courses" className="mt-4 inline-block text-indigo-600 hover:underline">&larr; Back</Link>
+        <h3 className="text-xl font-bold text-slate-900">{t('courses', 'failedToLoadCourse')}</h3>
+        <Link href="/dashboard/courses" className="mt-4 inline-block text-indigo-600 hover:underline">&larr; {t('common', 'back')}</Link>
       </div>
     );
   }
@@ -336,13 +339,20 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     <div className="space-y-8">
       {/* ── Banner ── */}
       <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-6 py-16 sm:px-12 sm:py-24 shadow-xl">
+        {currentCourse.cover_url && (
+          <img
+            src={currentCourse.cover_url}
+            alt={currentCourse.title}
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/90 to-purple-800/90 mix-blend-multiply" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
           <div className="max-w-2xl text-white">
             <Link href="/dashboard/courses" className="inline-flex items-center text-sm text-white/70 hover:text-white mb-6 transition-colors">
               <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>Back to courses
+              </svg>{t('courses', 'backToCourses')}
             </Link>
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">{currentCourse.title}</h1>
             <p className="text-indigo-100">{currentCourse.description}</p>
@@ -352,7 +362,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                Instructor: <span className="font-semibold text-white">{currentCourse.teacher_name}</span>
+                {t('courses', 'instructor')}: <span className="font-semibold text-white">{currentCourse.teacher_name}</span>
               </p>
             )}
 
@@ -360,7 +370,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
             {isEnrolled && user?.role === 'student' && (
               <div className="mt-6">
                 <div className="flex justify-between text-xs text-white/70 mb-1">
-                  <span>Your progress</span><span>{courseProgress}%</span>
+                  <span>{t('courses', 'yourProgress')}</span><span>{courseProgress}%</span>
                 </div>
                 <div className="h-2 bg-white/20 rounded-full">
                   <div className="h-2 bg-white rounded-full transition-all" style={{ width: `${courseProgress}%` }} />
@@ -372,19 +382,19 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
           <div className="flex flex-col gap-3 flex-shrink-0">
             {isTeacher ? (
               <>
-                <Button variant="secondary" size="lg" onClick={openEditModal}>✏️ Edit Course</Button>
-                <Button variant="ghost" size="lg" className="bg-red-500/20 hover:bg-red-500/40 text-white" onClick={() => setIsDeleteConfirm(true)}>🗑 Delete</Button>
+                <Button variant="secondary" size="lg" onClick={openEditModal}>✏️ {t('courses', 'editCourse')}</Button>
+                <Button variant="ghost" size="lg" className="bg-red-500/20 hover:bg-red-500/40 text-white" onClick={() => setIsDeleteConfirm(true)}>🗑 {t('common', 'delete')}</Button>
               </>
             ) : isEnrolled ? (
               <>
                 {enrollmentStatus === 'completed' && hasFinalModule && (
-                  <Button variant="secondary" size="lg" onClick={() => setShowCompletionModal(true)}>🎓 Claim Certificate</Button>
+                  <Button variant="secondary" size="lg" onClick={() => setShowCompletionModal(true)}>🎓 {t('courses', 'claimCertificate')}</Button>
                 )}
-                <Button variant="ghost" size="lg" className="bg-white/10 hover:bg-white/20 text-white" onClick={() => setShowReviewModal(true)}>⭐ Leave a Review</Button>
+                <Button variant="ghost" size="lg" className="bg-white/10 hover:bg-white/20 text-white" onClick={() => setShowReviewModal(true)}>⭐ {t('courses', 'leaveReview')}</Button>
               </>
             ) : (
               <Button variant="secondary" size="lg" onClick={handleEnroll} disabled={isEnrolling}>
-                {isEnrolling ? 'Enrolling…' : 'Enroll Now'}
+                {isEnrolling ? t('courses', 'enrolling') : t('courses', 'enroll')}
               </Button>
             )}
           </div>
@@ -394,13 +404,13 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
       {/* ── Curriculum ── */}
       <section className="bg-white rounded-2xl p-6 shadow-sm ring-1 ring-slate-200">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Curriculum</h2>
-          {isTeacher && <Button variant="outline" size="sm" onClick={() => setShowAddModule(true)}>+ Add Module</Button>}
+          <h2 className="text-2xl font-bold text-slate-900">{t('courses', 'curriculum')}</h2>
+          {isTeacher && <Button variant="outline" size="sm" onClick={() => setShowAddModule(true)}>{t('courses', 'addModule')}</Button>}
         </div>
 
         {curriculum.length === 0 ? (
           <div className="text-center py-10 text-slate-500 border-2 border-dashed border-slate-200 rounded-xl">
-            {isTeacher ? 'No modules yet. Click "Add Module" to get started.' : 'No content available yet.'}
+            {isTeacher ? t('courses', 'noModulesTeacher') : t('courses', 'noContentAvailable')}
           </div>
         ) : (
           <div className="space-y-4">
@@ -412,15 +422,15 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                     {mod.is_final && <span className="text-sm">🏁</span>}
                     <span className="font-semibold text-slate-900">{mod.module_title}</span>
                     {mod.is_final && (
-                      <span className="text-xs bg-amber-200 text-amber-800 rounded-full px-2 py-0.5">Final Module</span>
+                      <span className="text-xs bg-amber-200 text-amber-800 rounded-full px-2 py-0.5">{t('courses', 'finalModule')}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-500">{mod.lessons.length} lessons</span>
+                    <span className="text-sm text-slate-500">{mod.lessons.length} {t('courses', 'lessonsCount')}</span>
                     {isTeacher && (
                       <>
-                        <button onClick={() => openAddLesson(mod.module_id)} className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-1 rounded transition-colors">+ Lesson</button>
-                        <button onClick={() => handleDeleteModule(mod.module_id)} className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors">Delete</button>
+                        <button onClick={() => openAddLesson(mod.module_id)} className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-1 rounded transition-colors">{t('courses', 'addLesson')}</button>
+                        <button onClick={() => handleDeleteModule(mod.module_id)} className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors">{t('common', 'delete')}</button>
                       </>
                     )}
                   </div>
@@ -430,14 +440,14 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                 {mod.is_final && user?.role === 'student' && isEnrolled && (
                   <div className="px-4 py-3 bg-amber-50/50 border-b border-amber-100">
                     <p className="text-sm text-amber-800 italic">
-                      {mod.completion_message || 'Congratulations on reaching the final module! Complete all lessons to earn your certificate.'}
+                      {mod.completion_message || t('courses', 'completionMsgFallback')}
                     </p>
                     {enrollmentStatus === 'completed' && (
                       <button
                         onClick={() => setShowCompletionModal(true)}
                         className="mt-2 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors"
                       >
-                        🎓 Claim Your Certificate
+                        {t('courses', 'claimCertBtn')}
                       </button>
                     )}
                   </div>
@@ -456,7 +466,7 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                               <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold mr-3 flex-shrink-0 text-slate-400">🔒</div>
                               <div className="min-w-0">
                                 <p className="text-sm font-medium text-slate-500 truncate">{lesson.title}</p>
-                                <p className="text-xs text-slate-400">Opens {new Date(lesson.available_from!).toLocaleDateString()}</p>
+                                <p className="text-xs text-slate-400">{t('courses', 'opensForStudents')} {new Date(lesson.available_from!).toLocaleDateString()}</p>
                               </div>
                             </div>
                           ) : (
@@ -467,11 +477,11 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                                 <div className="flex items-center gap-3 mt-0.5">
                                   <p className="text-xs text-slate-400 capitalize">{lesson.content_type}</p>
                                   {lesson.author_name && (
-                                    <p className="text-xs text-slate-400">by {lesson.author_name}</p>
+                                    <p className="text-xs text-slate-400">{t('lessons', 'by')} {lesson.author_name}</p>
                                   )}
                                   {lesson.deadline && (
                                     <p className={`text-xs ${isPastDeadline ? 'text-red-400' : 'text-amber-500'}`}>
-                                      Due: {new Date(lesson.deadline).toLocaleDateString()}
+                                      {t('lessons', 'due')} {new Date(lesson.deadline).toLocaleDateString()}
                                     </p>
                                   )}
                                 </div>
@@ -481,16 +491,16 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                         </div>
                         {isTeacher && (
                           <div className="flex items-center gap-1 ml-3 flex-shrink-0">
-                            <button onClick={() => openAddAssignment(lesson.id)} className="text-xs text-amber-600 hover:bg-amber-50 px-2 py-1 rounded">+ HW</button>
-                            <button onClick={() => openEditLesson(lesson)} className="text-xs text-slate-500 hover:bg-slate-100 px-2 py-1 rounded">Edit</button>
-                            <button onClick={() => handleDeleteLesson(lesson.id)} className="text-xs text-red-400 hover:bg-red-50 px-2 py-1 rounded">Del</button>
+                            <button onClick={() => openAddAssignment(lesson.id)} className="text-xs text-amber-600 hover:bg-amber-50 px-2 py-1 rounded">{t('courses', 'addAssignment')}</button>
+                            <button onClick={() => openEditLesson(lesson)} className="text-xs text-slate-500 hover:bg-slate-100 px-2 py-1 rounded">{t('common', 'edit')}</button>
+                            <button onClick={() => handleDeleteLesson(lesson.id)} className="text-xs text-red-400 hover:bg-red-50 px-2 py-1 rounded">{t('common', 'delete')}</button>
                           </div>
                         )}
                       </div>
                     );
                   })}
                   {mod.lessons.length === 0 && (
-                    <div className="px-4 py-3 text-sm text-slate-400 italic">No lessons yet</div>
+                    <div className="px-4 py-3 text-sm text-slate-400 italic">{t('courses', 'noLessonsYet')}</div>
                   )}
                 </div>
               </div>
@@ -506,9 +516,9 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md text-center p-8 space-y-5">
             <div className="text-7xl">🎓</div>
-            <h2 className="text-2xl font-extrabold text-slate-900">Course Completed!</h2>
+            <h2 className="text-2xl font-extrabold text-slate-900">{t('certificates', 'courseCompleted')}</h2>
             <p className="text-slate-600">
-              Congratulations! You've successfully completed <strong>{currentCourse.title}</strong>. Your certificate is ready to be claimed.
+              {t('courses', 'courseCompletedDesc').replace('{courseTitle}', currentCourse.title)}
             </p>
             <div className="pt-2 flex flex-col gap-3">
               <button
@@ -516,9 +526,9 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
                 disabled={isClaiming}
                 className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 text-base font-bold text-white hover:from-amber-500 hover:to-orange-600 disabled:opacity-60 transition-all shadow-lg shadow-amber-200"
               >
-                {isClaiming ? 'Generating…' : '📜 Get My Certificate'}
+                {isClaiming ? t('certificates', 'generating') : t('courses', 'getCertBtn')}
               </button>
-              <button onClick={() => setShowCompletionModal(false)} className="text-sm text-slate-500 hover:text-slate-700">Close</button>
+              <button onClick={() => setShowCompletionModal(false)} className="text-sm text-slate-500 hover:text-slate-700">{t('common', 'close')}</button>
             </div>
           </div>
         </div>
@@ -526,10 +536,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
       {/* Review modal */}
       {showReviewModal && (
-        <Modal title="Leave a Review" onClose={() => setShowReviewModal(false)}>
+        <Modal title={t('courses', 'leaveReview')} onClose={() => setShowReviewModal(false)}>
           <form onSubmit={handleSubmitReview} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Rating</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">{t('courses', 'ratingLabel')}</label>
               <div className="flex gap-2">
                 {[1,2,3,4,5].map((n) => (
                   <button key={n} type="button" onClick={() => setReviewRating(n)}
@@ -540,14 +550,14 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Comment (optional)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('courses', 'commentOptional')}</label>
               <textarea rows={4} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Share your experience with this course..."
+                placeholder={t('courses', 'commentPlaceholder')}
                 value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} />
             </div>
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={() => setShowReviewModal(false)}>Cancel</Button>
-              <Button type="submit" variant="primary" isLoading={isSubmittingReview}>Submit Review</Button>
+              <Button type="button" variant="ghost" onClick={() => setShowReviewModal(false)}>{t('common', 'cancel')}</Button>
+              <Button type="submit" variant="primary" isLoading={isSubmittingReview}>{t('courses', 'submitReview') || t('common', 'submit')}</Button>
             </div>
           </form>
         </Modal>
@@ -555,17 +565,34 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
       {/* Edit Course */}
       {isEditing && (
-        <Modal title="Edit Course" onClose={() => setIsEditing(false)}>
+        <Modal title={t('courses', 'editCourseTitle') || t('courses', 'editCourse')} onClose={() => setIsEditing(false)}>
           <form onSubmit={handleSaveEdit} className="space-y-4">
-            <Input label="Course Title" required value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+            {/* Cover image upload */}
+            <FileUploader
+              variant="cover"
+              label={t('files', 'uploadCover')}
+              hint={t('files', 'coverHint')}
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              maxSizeMB={5}
+              currentUrl={currentCourse?.cover_url}
+              onUpload={async (file) => {
+                const form = new FormData();
+                form.append('cover', file);
+                await apiClient.post(`/courses/${courseId}/cover`, form, {
+                  headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                dispatch(fetchCourseById(courseId));
+              }}
+            />
+            <Input label={t('courses', 'courseTitle')} required value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('courses', 'description')}</label>
               <textarea required rows={4} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
             </div>
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
-              <Button type="submit" variant="primary" isLoading={isSaving}>Save</Button>
+              <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>{t('common', 'cancel')}</Button>
+              <Button type="submit" variant="primary" isLoading={isSaving}>{t('common', 'save')}</Button>
             </div>
           </form>
         </Modal>
@@ -573,13 +600,13 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
       {/* Delete Course */}
       {isDeleteConfirm && (
-        <Modal title="Delete Course" onClose={() => setIsDeleteConfirm(false)}>
+        <Modal title={t('courses', 'deleteCourseTitle') || t('courses', 'deleteCourse')} onClose={() => setIsDeleteConfirm(false)}>
           <div className="space-y-4">
-            <p className="text-sm text-slate-700">Delete <strong>"{currentCourse.title}"</strong>? This cannot be undone.</p>
+            <p className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: t('courses', 'deleteConfirm').replace('{courseTitle}', `<strong>${currentCourse.title}</strong>`) }}></p>
             <div className="flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setIsDeleteConfirm(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setIsDeleteConfirm(false)}>{t('common', 'cancel')}</Button>
               <button onClick={handleDelete} disabled={isDeleting} className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50">
-                {isDeleting ? 'Deleting…' : 'Delete'}
+                {isDeleting ? t('courses', 'deleting') : t('common', 'delete')}
               </button>
             </div>
           </div>
@@ -588,24 +615,24 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
       {/* Add Module */}
       {showAddModule && (
-        <Modal title="Add Module" onClose={() => setShowAddModule(false)}>
+        <Modal title={t('courses', 'addModuleTitle')} onClose={() => setShowAddModule(false)}>
           <form onSubmit={handleAddModule} className="space-y-4">
-            <Input label="Module Title" required placeholder="e.g. Introduction" value={newModuleTitle} onChange={(e) => setNewModuleTitle(e.target.value)} />
+            <Input label={t('courses', 'moduleTitleLabel')} required placeholder={t('courses', 'moduleTitlePlaceholder')} value={newModuleTitle} onChange={(e) => setNewModuleTitle(e.target.value)} />
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" className="rounded" checked={newModuleIsFinal} onChange={(e) => setNewModuleIsFinal(e.target.checked)} />
-              <span className="text-sm font-medium text-slate-700">🏁 Mark as Final Module (completion screen for students)</span>
+              <span className="text-sm font-medium text-slate-700">{t('courses', 'markFinalModule')}</span>
             </label>
             {newModuleIsFinal && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Completion Message</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('courses', 'completionMsgLabel')}</label>
                 <textarea rows={3} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Congratulations on completing this course! You've mastered..."
+                  placeholder={t('courses', 'completionMsgPlaceholder')}
                   value={newModuleCompletionMsg} onChange={(e) => setNewModuleCompletionMsg(e.target.value)} />
               </div>
             )}
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={() => setShowAddModule(false)}>Cancel</Button>
-              <Button type="submit" variant="primary" isLoading={isAddingModule}>Add Module</Button>
+              <Button type="button" variant="ghost" onClick={() => setShowAddModule(false)}>{t('common', 'cancel')}</Button>
+              <Button type="submit" variant="primary" isLoading={isAddingModule}>{t('courses', 'addModuleTitle') || t('courses', 'addModule')}</Button>
             </div>
           </form>
         </Modal>
@@ -613,32 +640,32 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
       {/* Add Lesson */}
       {addLessonFor !== null && (
-        <Modal title="Add Lesson" onClose={() => setAddLessonFor(null)}>
+        <Modal title={t('courses', 'addLessonTitle')} onClose={() => setAddLessonFor(null)}>
           <form onSubmit={handleAddLesson} className="space-y-4">
-            <Input label="Lesson Title" required placeholder="e.g. Variables & Types" value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} />
+            <Input label={t('courses', 'lessonTitleLabel')} required placeholder={t('courses', 'lessonTitlePlaceholder')} value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} />
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Type</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('courses', 'typeLabel')}</label>
               <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={lessonType} onChange={(e) => setLessonType(e.target.value as any)}>
-                <option value="text">📝 Text Lecture</option>
-                <option value="video">🎬 YouTube Video</option>
-                <option value="practice">💻 Practice Task</option>
+                <option value="text">📝 {t('lessons', 'textLesson')}</option>
+                <option value="video">🎬 {t('lessons', 'videoLesson')}</option>
+                <option value="practice">💻 {t('lessons', 'practiceLesson')}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">{lessonType === 'video' ? 'YouTube URL' : 'Content'}</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">{lessonType === 'video' ? t('courses', 'youtubeUrl') : t('courses', 'contentLabel')}</label>
               {lessonType === 'video'
                 ? <Input type="url" placeholder="https://www.youtube.com/watch?v=..." value={lessonContent} onChange={(e) => setLessonContent(e.target.value)} />
                 : <MarkdownEditor value={lessonContent} onChange={setLessonContent} minHeight={280} placeholder={'# Lecture Title\n\nWrite your lecture content here…\n\n## Section\n\nUse **bold**, _italic_, `code`, lists, tables and more.'} />
               }
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <DateTimeField label="Opens for students" required value={lessonAvailableFrom} onChange={setLessonAvailableFrom} />
-              <DateTimeField label="Deadline" required value={lessonDeadline} onChange={setLessonDeadline} />
+              <DateTimeField label={t('courses', 'opensForStudents')} required value={lessonAvailableFrom} onChange={setLessonAvailableFrom} />
+              <DateTimeField label={t('courses', 'deadlineLabel')} required value={lessonDeadline} onChange={setLessonDeadline} />
             </div>
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={() => setAddLessonFor(null)}>Cancel</Button>
-              <Button type="submit" variant="primary" isLoading={isAddingLesson}>Add Lesson</Button>
+              <Button type="button" variant="ghost" onClick={() => setAddLessonFor(null)}>{t('common', 'cancel')}</Button>
+              <Button type="submit" variant="primary" isLoading={isAddingLesson}>{t('courses', 'addLessonTitle')}</Button>
             </div>
           </form>
         </Modal>
@@ -646,32 +673,32 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
       {/* Edit Lesson */}
       {editLesson && (
-        <Modal title="Edit Lesson" onClose={() => setEditLesson(null)}>
+        <Modal title={t('courses', 'editLessonTitle')} onClose={() => setEditLesson(null)}>
           <form onSubmit={handleSaveLesson} className="space-y-4">
-            <Input label="Title" required value={editLessonTitle} onChange={(e) => setEditLessonTitle(e.target.value)} />
+            <Input label={t('courses', 'lessonTitleLabel') || t('courses', 'assignTitleLabel')} required value={editLessonTitle} onChange={(e) => setEditLessonTitle(e.target.value)} />
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Type</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('courses', 'typeLabel')}</label>
               <select className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={editLessonType} onChange={(e) => setEditLessonType(e.target.value as any)}>
-                <option value="text">📝 Text</option>
-                <option value="video">🎬 Video</option>
-                <option value="practice">💻 Practice</option>
+                <option value="text">📝 {t('lessons', 'textLesson')}</option>
+                <option value="video">🎬 {t('lessons', 'videoLesson')}</option>
+                <option value="practice">💻 {t('lessons', 'practiceLesson')}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">{editLessonType === 'video' ? 'YouTube URL' : 'Content'}</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">{editLessonType === 'video' ? t('courses', 'youtubeUrl') : t('courses', 'contentLabel')}</label>
               {editLessonType === 'video'
                 ? <Input type="url" value={editLessonContent} onChange={(e) => setEditLessonContent(e.target.value)} />
                 : <MarkdownEditor value={editLessonContent} onChange={setEditLessonContent} minHeight={280} />
               }
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <DateTimeField label="Opens for students" required value={editLessonAvailFrom} onChange={setEditLessonAvailFrom} />
-              <DateTimeField label="Deadline" required value={editLessonDeadline} onChange={setEditLessonDeadline} />
+              <DateTimeField label={t('courses', 'opensForStudents')} required value={editLessonAvailFrom} onChange={setEditLessonAvailFrom} />
+              <DateTimeField label={t('courses', 'deadlineLabel')} required value={editLessonDeadline} onChange={setEditLessonDeadline} />
             </div>
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={() => setEditLesson(null)}>Cancel</Button>
-              <Button type="submit" variant="primary" isLoading={isSavingLesson}>Save</Button>
+              <Button type="button" variant="ghost" onClick={() => setEditLesson(null)}>{t('common', 'cancel')}</Button>
+              <Button type="submit" variant="primary" isLoading={isSavingLesson}>{t('common', 'save')}</Button>
             </div>
           </form>
         </Modal>
@@ -679,21 +706,21 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
 
       {/* Add Assignment */}
       {addAssignmentFor !== null && (
-        <Modal title="Add Assignment" onClose={() => setAddAssignmentFor(null)}>
+        <Modal title={t('courses', 'addAssignmentTitle')} onClose={() => setAddAssignmentFor(null)}>
           <form onSubmit={handleAddAssignment} className="space-y-4">
-            <Input label="Title" required value={assignTitle} onChange={(e) => setAssignTitle(e.target.value)} />
+            <Input label={t('courses', 'assignTitleLabel')} required value={assignTitle} onChange={(e) => setAssignTitle(e.target.value)} />
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('courses', 'assignDescLabel')}</label>
               <textarea rows={3} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={assignDesc} onChange={(e) => setAssignDesc(e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Max Score" type="number" min="1" required value={assignMaxScore} onChange={(e) => setAssignMaxScore(e.target.value)} />
-              <DateTimeField label="Deadline" required value={assignDueDate} onChange={setAssignDueDate} />
+              <Input label={t('courses', 'maxScoreLabel')} type="number" min="1" required value={assignMaxScore} onChange={(e) => setAssignMaxScore(e.target.value)} />
+              <DateTimeField label={t('courses', 'deadlineLabel')} required value={assignDueDate} onChange={setAssignDueDate} />
             </div>
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={() => setAddAssignmentFor(null)}>Cancel</Button>
-              <Button type="submit" variant="primary" isLoading={isAddingAssign}>Add Assignment</Button>
+              <Button type="button" variant="ghost" onClick={() => setAddAssignmentFor(null)}>{t('common', 'cancel')}</Button>
+              <Button type="submit" variant="primary" isLoading={isAddingAssign}>{t('courses', 'addAssignmentTitle')}</Button>
             </div>
           </form>
         </Modal>

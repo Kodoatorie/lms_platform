@@ -29,6 +29,15 @@ export class EnrollmentModel {
         return result.rows;
     }
 
+    async findByUserAndCourse(userId, courseId) {
+        const result = await this.pool.query(
+            `SELECT * FROM enrollments WHERE user_id = $1 AND course_id = $2 LIMIT 1`,
+            [userId, courseId]
+        );
+        return result.rows[0] || null;
+    }
+
+
     async findByCourse(courseId) {
         const result = await this.pool.query(
             `SELECT e.*, u.email, u.id as user_id

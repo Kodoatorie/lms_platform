@@ -102,10 +102,21 @@ export default function CoursesPage() {
                             href={`/dashboard/courses/${course.id}`}
                             className="group flex flex-col rounded-2xl bg-white overflow-hidden ring-1 ring-slate-200 shadow-sm transition-all hover:shadow-md hover:ring-indigo-500"
                         >
-                            <div className="relative h-40 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-end p-5">
-                                <h3 className="text-lg font-bold text-white line-clamp-2 drop-shadow">
-                                    {course.title}
-                                </h3>
+                            <div className="relative h-40 overflow-hidden">
+                                {course.cover_url ? (
+                                    <img
+                                        src={course.cover_url}
+                                        alt={course.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600" />
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-5">
+                                    <h3 className="text-lg font-bold text-white line-clamp-2 drop-shadow">
+                                        {course.title}
+                                    </h3>
+                                </div>
                             </div>
                             <div className="flex flex-1 flex-col justify-between p-5">
                                 <div className="space-y-2">
@@ -142,9 +153,9 @@ export default function CoursesPage() {
                                 <>
                                     <div className="text-4xl mb-3">🔍</div>
                                     <h3 className="text-sm font-semibold text-slate-900">{t('common', 'noResults')}</h3>
-                                    <p className="mt-1 text-sm text-slate-500">Try a different search term.</p>
+                                    <p className="mt-1 text-sm text-slate-500">{t('courses', 'tryDifferentSearch')}</p>
                                     <button onClick={() => setSearchInput('')} className="mt-3 text-sm text-indigo-600 hover:underline">
-                                        Clear search
+                                        {t('courses', 'clearSearch')}
                                     </button>
                                 </>
                             ) : (

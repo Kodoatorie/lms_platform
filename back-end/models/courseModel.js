@@ -51,14 +51,15 @@ export class CourseModel {
         return result.rows[0];
     }
 
-    async update(id, { title, description }) {
+    async update(id, { title, description, cover_url }) {
         const result = await this.pool.query(
             `UPDATE courses
-             SET title = COALESCE($1, title),
+             SET title       = COALESCE($1, title),
                  description = COALESCE($2, description),
-                 updated_at = NOW()
-             WHERE id = $3 RETURNING *`,
-            [title, description, id]
+                 cover_url   = COALESCE($3, cover_url),
+                 updated_at  = NOW()
+             WHERE id = $4 RETURNING *`,
+            [title, description, cover_url || null, id]
         );
         return result.rows[0];
     }

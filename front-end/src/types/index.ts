@@ -53,8 +53,35 @@ export interface Course {
  description: string;
  teacher_id: number;
  teacher_name?: string;
+ cover_url?: string | null;
  created_at: string;
  updated_at: string;
+}
+
+// ==========================================
+// 9. Files / Storage
+// ==========================================
+export type FileType = 'course_cover' | 'lesson_material' | 'submission';
+
+export interface FileRecord {
+ id: number;
+ course_id?: number;
+ lesson_id?: number;
+ submission_id?: number;
+ bucket: string;
+ object_name: string;
+ original_name: string;
+ mime_type: string;
+ size_bytes: number;
+ file_type: FileType;
+ public_url?: string | null;
+ uploaded_by?: number;
+ created_at: string;
+}
+
+export interface DownloadUrlResponse {
+ url: string;
+ expires_in: number | null;
 }
 
 export interface Module {

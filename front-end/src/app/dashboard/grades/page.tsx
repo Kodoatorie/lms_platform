@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppSelector } from '../../../store/hooks';
 import apiClient from '../../../lib/api/client';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 interface GradedItem {
   grade_id: number;
@@ -81,6 +82,7 @@ export default function GradesPage() {
   const [activeTab, setActiveTab] = useState<'graded' | 'pending'>('graded');
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [filterCourse, setFilterCourse] = useState<number | 'all'>('all');
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!user || user.role !== 'student') return;
@@ -116,9 +118,9 @@ export default function GradesPage() {
   if (user.role !== 'student') {
     return (
       <div className="space-y-6">
-        <header><h1 className="text-3xl font-bold text-slate-900">Grades</h1></header>
+        <header><h1 className="text-3xl font-bold text-slate-900">{t('grades', 'gradesTitle')}</h1></header>
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-amber-800 text-sm">
-          This page is for students. Teachers can view student grades from the Grading page.
+          {t('grades', 'forStudents')}
         </div>
       </div>
     );
@@ -127,8 +129,8 @@ export default function GradesPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">My Grades</h1>
-        <p className="mt-1 text-sm text-slate-600">Track your performance across all assignments.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('grades', 'title')}</h1>
+        <p className="mt-1 text-sm text-slate-600">{t('grades', 'trackPerformance')}</p>
       </header>
 
       {/* Stats cards */}
@@ -136,15 +138,15 @@ export default function GradesPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200">
             <p className="text-2xl font-bold text-slate-900">{grades.length}</p>
-            <p className="text-xs text-slate-500 mt-1">Graded assignments</p>
+            <p className="text-xs text-slate-500 mt-1">{t('grades', 'gradedAssignments')}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200">
             <p className="text-2xl font-bold text-indigo-600">{avgScore}%</p>
-            <p className="text-xs text-slate-500 mt-1">Average score</p>
+            <p className="text-xs text-slate-500 mt-1">{t('grades', 'avgScore')}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200">
             <p className="text-2xl font-bold text-amber-600">{pending.length}</p>
-            <p className="text-xs text-slate-500 mt-1">Awaiting review</p>
+            <p className="text-xs text-slate-500 mt-1">{t('grades', 'awaitingReview')}</p>
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200">
             {best ? (
@@ -153,7 +155,7 @@ export default function GradesPage() {
                   {Math.round((best.score / best.max_score) * 100)}%
                 </p>
                 <p className="text-xs text-slate-500 mt-1 truncate" title={best.assignment_title}>
-                  Best: {best.assignment_title}
+                  {t('grades', 'best')}: {best.assignment_title}
                 </p>
               </>
             ) : (
@@ -165,10 +167,10 @@ export default function GradesPage() {
 
       {/* Tabs */}
       <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-        {(['graded', 'pending'] as const).map((t) => (
-          <button key={t} onClick={() => setActiveTab(t)}
-            className={`px-5 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${activeTab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-            {t === 'graded' ? `Graded (${grades.length})` : `Pending (${pending.length})`}
+        {(['graded', 'pending'] as const).map((t_tab) => (
+          <button key={t_tab} onClick={() => setActiveTab(t_tab)}
+            className={`px-5 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeTab === t_tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+            {t_tab === 'graded' ? `${t('grades', 'graded')} (${grades.length})` : `${t('grades', 'pending')} (${pending.length})`}
           </button>
         ))}
       </div>
@@ -178,10 +180,10 @@ export default function GradesPage() {
           {/* Course filter */}
           {courses.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-medium text-slate-500">Filter:</span>
+              <span className="text-xs font-medium text-slate-500">{t('grades', 'filter')}</span>
               <button onClick={() => setFilterCourse('all')}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterCourse === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
-                All courses
+                {t('grades', 'allCourses')}
               </button>
               {courses.map((c) => (
                 <button key={c.id} onClick={() => setFilterCourse(c.id)}
@@ -197,8 +199,8 @@ export default function GradesPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500">
               <div className="text-4xl mb-3">📝</div>
-              <p className="font-medium">No graded assignments yet</p>
-              <p className="text-sm mt-1">Submit assignments to receive grades from your teacher.</p>
+              <p className="font-medium">{t('grades', 'noGraded')}</p>
+              <p className="text-sm mt-1">{t('grades', 'submitToReceive')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -229,7 +231,7 @@ export default function GradesPage() {
                             <span className="text-xs text-slate-400">{g.lesson_title}</span>
                           </div>
                           {g.teacher_name && (
-                            <p className="text-xs text-slate-400 mt-0.5">Graded by {g.teacher_name}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{t('grades', 'gradedBy')} {g.teacher_name}</p>
                           )}
                         </div>
                       </div>
@@ -251,7 +253,7 @@ export default function GradesPage() {
                       <div className="border-t border-slate-100 bg-slate-50 p-5 space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Your Submission</p>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('grades', 'yourSubmission')}</p>
                             <div className="bg-white rounded-xl p-4 ring-1 ring-slate-200 text-sm text-slate-700 space-y-2">
                               {g.google_drive_link && (
                                 <a
@@ -263,33 +265,33 @@ export default function GradesPage() {
                                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                                   </svg>
-                                  Open Google Drive ↗
+                                  {t('grades', 'openGoogleDrive')}
                                 </a>
                               )}
                               {g.submission_content && (
                                 <div className="whitespace-pre-wrap max-h-40 overflow-y-auto">{g.submission_content}</div>
                               )}
                               {!g.google_drive_link && !g.submission_content && (
-                                <span className="italic text-slate-400">No content.</span>
+                                <span className="italic text-slate-400">{t('grades', 'noContent')}</span>
                               )}
                             </div>
                             <p className="text-xs text-slate-400 mt-1">
-                              Submitted: {new Date(g.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              {t('grades', 'submitted')} {new Date(g.submitted_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Teacher Feedback</p>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('grades', 'feedback')}</p>
                             {g.feedback ? (
                               <div className="bg-white rounded-xl p-4 ring-1 ring-indigo-100 text-sm text-slate-700 min-h-[80px]">
                                 {g.feedback}
                               </div>
                             ) : (
                               <div className="bg-white rounded-xl p-4 ring-1 ring-slate-200 text-sm text-slate-400 italic min-h-[80px] flex items-center">
-                                No written feedback provided.
+                                {t('grades', 'noFeedback')}
                               </div>
                             )}
                             <p className="text-xs text-slate-400 mt-1">
-                              Graded: {new Date(g.graded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              {t('grades', 'gradedDate')} {new Date(g.graded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                             </p>
                           </div>
                         </div>
@@ -308,8 +310,8 @@ export default function GradesPage() {
         ) : pending.length === 0 ? (
           <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500">
             <div className="text-4xl mb-3">✅</div>
-            <p className="font-medium">No pending reviews</p>
-            <p className="text-sm mt-1">All your submissions have been graded.</p>
+            <p className="font-medium">{t('grades', 'noPending')}</p>
+            <p className="text-sm mt-1">{t('grades', 'allGraded')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -320,7 +322,7 @@ export default function GradesPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        Awaiting review
+                        {t('grades', 'awaitingReview')}
                       </span>
                     </div>
                     <p className="font-semibold text-slate-900">{p.assignment_title}</p>
@@ -331,13 +333,13 @@ export default function GradesPage() {
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-xs text-slate-500">Max score: <strong>{p.max_score}</strong></p>
+                    <p className="text-xs text-slate-500">{t('grades', 'maxScore')}: <strong>{p.max_score}</strong></p>
                     <p className="text-xs text-slate-400 mt-1">
-                      Submitted {new Date(p.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {t('grades', 'submitted')} {new Date(p.submitted_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </p>
                     {p.due_date && (
                       <p className={`text-xs mt-1 ${new Date(p.due_date) < new Date() ? 'text-red-500' : 'text-slate-400'}`}>
-                        Due: {new Date(p.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {t('lessons', 'due')} {new Date(p.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                       </p>
                     )}
                   </div>

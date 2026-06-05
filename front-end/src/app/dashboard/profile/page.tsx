@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../../store/hooks';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import apiClient from '../../../lib/api/client';
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { user } = useAppSelector((state) => state.auth);
 
   const [fullName, setFullName] = useState('');
@@ -44,9 +46,9 @@ export default function ProfilePage() {
         full_name: fullName,
         bio: bio
       });
-      setMessage('Profile updated successfully!');
+      setMessage(t('profilePage', 'success'));
     } catch (err) {
-      setMessage('Failed to update profile.');
+      setMessage(t('profilePage', 'error'));
       console.error(err);
     } finally {
       setIsSaving(false);
@@ -57,10 +59,10 @@ export default function ProfilePage() {
     <div className=" space-y-8">
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 ">
-          Profile Settings
+          {t('profilePage', 'title')}
         </h1>
         <p className="mt-2 text-sm text-slate-600 ">
-          Manage your account settings and preferences.
+          {t('profilePage', 'subtitle')}
         </p>
       </header>
 
@@ -71,15 +73,15 @@ export default function ProfilePage() {
               {user.email.charAt(0).toUpperCase()}
             </div>
             <div>
-              <Button variant="outline" size="sm">Change avatar</Button>
+              <Button variant="outline" size="sm">{t('profilePage', 'changeAvatar')}</Button>
               <p className="mt-2 text-xs leading-5 text-slate-500 ">
-                JPG, GIF or PNG. 1MB max.
+                {t('profilePage', 'avatarHint')}
               </p>
             </div>
           </div>
 
           {message && (
-            <div className={`mb-6 p-4 rounded-md text-sm ${message.includes('success') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+            <div className={`mb-6 p-4 rounded-md text-sm ${message === t('profilePage', 'success') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
               {message}
             </div>
           )}
@@ -88,7 +90,7 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
               <div className="sm:col-span-3">
                 <Input
-                  label="Email address"
+                  label={t('profilePage', 'emailLabel')}
                   type="email"
                   value={user.email}
                   disabled
@@ -97,18 +99,18 @@ export default function ProfilePage() {
 
               <div className="sm:col-span-3">
                 <Input
-                  label="Role"
+                  label={t('profilePage', 'roleLabel')}
                   type="text"
-                  value={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                  value={t('profilePage', user.role === 'teacher' ? 'roleTeacher' : 'roleStudent')}
                   disabled
                 />
               </div>
 
               <div className="sm:col-span-full">
                 <Input
-                  label="Full name"
+                  label={t('profilePage', 'fullName')}
                   type="text"
-                  placeholder="e.g. Jane Doe"
+                  placeholder={t('profilePage', 'fullNamePlaceholder')}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   disabled={isLoading}
@@ -118,11 +120,11 @@ export default function ProfilePage() {
               {user.role === 'teacher' && (
                 <div className="sm:col-span-full">
                   <label className="text-sm font-medium text-slate-700 block mb-1.5">
-                    Bio
+                    {t('profilePage', 'bio')}
                   </label>
                   <textarea
                     className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px]"
-                    placeholder="Tell students about yourself..."
+                    placeholder={t('profilePage', 'bioPlaceholder')}
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     disabled={isLoading}
@@ -133,7 +135,7 @@ export default function ProfilePage() {
 
             <div className="flex items-center gap-x-4 pt-4 border-t border-slate-200 ">
               <Button type="submit" variant="primary" isLoading={isSaving}>
-                Save changes
+                {t('profilePage', 'saveChanges')}
               </Button>
             </div>
           </form>

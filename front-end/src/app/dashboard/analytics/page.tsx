@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppSelector } from '../../../store/hooks';
 import apiClient from '../../../lib/api/client';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 interface StudentRow {
   user_id: number;
@@ -28,6 +29,7 @@ interface CourseItem {
 
 export default function AnalyticsPage() {
   const { user, isLoading: authLoading } = useAppSelector((state) => state.auth);
+  const { t } = useTranslation();
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [analytics, setAnalytics] = useState<CourseAnalytics | null>(null);
@@ -75,7 +77,7 @@ export default function AnalyticsPage() {
     return (
       <div className="max-w-4xl space-y-8">
         <div className="rounded-md bg-red-50 p-4 border border-red-200">
-          <p className="text-sm text-red-700">Access restricted to teachers only.</p>
+          <p className="text-sm text-red-700">{t('analyticsPage', 'accessRestricted')}</p>
         </div>
       </div>
     );
@@ -86,7 +88,7 @@ export default function AnalyticsPage() {
 
   const statCards = [
     {
-      label: 'Active Students',
+      label: t('analyticsPage', 'activeStudents'),
       value: stats?.active_students_count ?? '—',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -96,7 +98,7 @@ export default function AnalyticsPage() {
       color: 'text-indigo-600 bg-indigo-50',
     },
     {
-      label: 'Avg. Completion',
+      label: t('analyticsPage', 'avgCompletion'),
       value: stats?.completion_rate != null ? `${Math.round(Number(stats.completion_rate))}%` : '—',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,7 +108,7 @@ export default function AnalyticsPage() {
       color: 'text-violet-600 bg-violet-50',
     },
     {
-      label: 'Avg. Score',
+      label: t('analyticsPage', 'avgScore'),
       value: stats?.average_score != null ? Number(stats.average_score).toFixed(1) : '—',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -116,7 +118,7 @@ export default function AnalyticsPage() {
       color: 'text-amber-600 bg-amber-50',
     },
     {
-      label: 'Total Enrolled',
+      label: t('analyticsPage', 'totalEnrolled'),
       value: students.length,
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -130,18 +132,18 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Students & Analytics</h1>
-        <p className="mt-2 text-sm text-slate-600">Monitor student progress and course performance.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('analyticsPage', 'title')}</h1>
+        <p className="mt-2 text-sm text-slate-600">{t('analyticsPage', 'subtitle')}</p>
       </header>
 
       {/* Course selector */}
       <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200">
         <div className="flex items-center gap-4 flex-wrap">
-          <label className="text-sm font-medium text-slate-700 flex-shrink-0">Select course:</label>
+          <label className="text-sm font-medium text-slate-700 flex-shrink-0">{t('analyticsPage', 'selectCourse')}</label>
           {isLoadingCourses ? (
             <div className="h-9 w-48 bg-slate-200 animate-pulse rounded-md" />
           ) : courses.length === 0 ? (
-            <p className="text-sm text-slate-500">You have no courses yet. <Link href="/dashboard/courses/new" className="text-indigo-600 hover:underline">Create one</Link></p>
+            <p className="text-sm text-slate-500">{t('analyticsPage', 'noCourses')} <Link href="/dashboard/courses/new" className="text-indigo-600 hover:underline">{t('analyticsPage', 'createOne')}</Link></p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {courses.map((c) => (
@@ -178,8 +180,8 @@ export default function AnalyticsPage() {
           {/* Student progress bar visualization */}
           {students.length > 0 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm ring-1 ring-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900 mb-2">Progress Distribution</h2>
-              <p className="text-xs text-slate-500 mb-4">Each bar represents one student's completion %</p>
+              <h2 className="text-lg font-semibold text-slate-900 mb-2">{t('analyticsPage', 'progressDist')}</h2>
+              <p className="text-xs text-slate-500 mb-4">{t('analyticsPage', 'progressDistSub')}</p>
               <div className="flex items-end gap-1 h-20">
                 {students.map((s) => (
                   <div
@@ -199,20 +201,20 @@ export default function AnalyticsPage() {
           {/* Students table */}
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Enrolled Students</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{students.length} student{students.length !== 1 ? 's' : ''} enrolled</p>
+              <h2 className="text-lg font-semibold text-slate-900">{t('analyticsPage', 'enrolledStudents')}</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{students.length} {students.length !== 1 ? t('analyticsPage', 'studentsEnrolled') : t('analyticsPage', 'studentEnrolled')} {t('analyticsPage', 'enrolledSuffix')}</p>
             </div>
             {students.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-sm">No students enrolled yet.</div>
+              <div className="p-8 text-center text-slate-500 text-sm">{t('analyticsPage', 'noStudentsEnrolled')}</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Student</th>
-                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Progress</th>
-                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Enrolled</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('analyticsPage', 'studentCol')}</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('analyticsPage', 'statusCol')}</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('analyticsPage', 'progressCol')}</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('analyticsPage', 'enrolledCol')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -258,7 +260,7 @@ export default function AnalyticsPage() {
           </div>
         </>
       ) : selectedCourseId ? (
-        <div className="text-center py-12 text-slate-500">No analytics data available yet for this course.</div>
+        <div className="text-center py-12 text-slate-500">{t('analyticsPage', 'noAnalytics')}</div>
       ) : null}
     </div>
   );

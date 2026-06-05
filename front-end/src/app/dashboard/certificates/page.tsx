@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '../../../store/hooks';
 import apiClient from '../../../lib/api/client';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
@@ -17,6 +18,7 @@ interface Certificate {
 
 function CertificateCard({ cert }: { cert: Certificate }) {
   const [downloading, setDownloading] = useState(false);
+  const { t } = useTranslation();
 
   const handleDownload = async () => {
     if (!cert.pdf_url) return;
@@ -34,7 +36,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch (err) {
-      alert('Download failed. The file may still be generating — please try again in a moment.');
+      alert(t('certificates', 'downloadFailed'));
     } finally {
       setDownloading(false);
     }
@@ -59,7 +61,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
         </h3>
         <div className="mt-3 space-y-1 text-sm text-slate-500">
           <p>
-            Issued:{' '}
+            {t('certificates', 'issued')}{' '}
             <span className="text-slate-700">
               {new Date(cert.issued_at).toLocaleDateString('en-US', {
                 month: 'long', day: 'numeric', year: 'numeric',
@@ -67,7 +69,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
             </span>
           </p>
           <p className="font-mono text-xs text-slate-400 truncate" title={cert.verification_code}>
-            ID: {cert.verification_code}
+            {t('certificates', 'id')} {cert.verification_code}
           </p>
         </div>
 
@@ -84,7 +86,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Downloading…
+                  {t('certificates', 'downloading')}
                 </>
               ) : (
                 <>
@@ -92,7 +94,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                       d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Download PDF
+                  {t('certificates', 'downloadPdf')}
                 </>
               )}
             </button>
@@ -102,7 +104,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Generating PDF…
+              {t('certificates', 'generating')}
             </div>
           )}
         </div>
@@ -117,6 +119,7 @@ export default function CertificatesPage() {
   const [isLoading, setIsLoading] = useState(true);
   // polling: if any cert has no pdf_url yet, keep polling
   const [polling, setPolling] = useState(false);
+  const { t } = useTranslation();
 
   const fetchCerts = useCallback(async () => {
     try {
@@ -158,14 +161,13 @@ export default function CertificatesPage() {
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Certificates</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('nav', 'certificates')}</h1>
         </header>
         <div className="text-center py-20 bg-white rounded-2xl ring-1 ring-slate-200">
           <div className="text-6xl mb-4">🏅</div>
-          <h2 className="text-xl font-bold text-slate-800">Certificates are for students</h2>
+          <h2 className="text-xl font-bold text-slate-800">{t('certificates', 'certsForStudents')}</h2>
           <p className="mt-2 text-slate-500 max-w-sm mx-auto">
-            Students earn certificates when they complete your courses.
-            Track their progress from the Students page.
+            {t('certificates', 'certsForStudentsDesc')}
           </p>
         </div>
       </div>
@@ -176,9 +178,9 @@ export default function CertificatesPage() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">My Certificates</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('certificates', 'title') || t('nav', 'certificates')}</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Download your earned certificates for completed courses.
+            {t('certificates', 'downloadEarned')}
           </p>
         </div>
         {polling && (
@@ -187,7 +189,7 @@ export default function CertificatesPage() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Generating PDFs…
+            {t('certificates', 'generatingPlural')}
           </div>
         )}
       </header>
@@ -201,8 +203,8 @@ export default function CertificatesPage() {
       ) : certificates.length === 0 ? (
         <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500">
           <div className="text-5xl mb-4">📜</div>
-          <p className="font-medium text-base">No certificates yet</p>
-          <p className="text-sm mt-1">Complete a course to earn your first certificate!</p>
+          <p className="font-medium text-base">{t('certificates', 'noCerts')}</p>
+          <p className="text-sm mt-1">{t('certificates', 'complete')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

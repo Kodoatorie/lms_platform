@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector } from '../../../store/hooks';
 import apiClient from '../../../lib/api/client';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 interface Student {
   user_id: number;
@@ -39,6 +40,7 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function StudentsPage() {
   const { user, isLoading: authLoading } = useAppSelector((s) => s.auth);
+  const { t } = useTranslation();
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
@@ -85,19 +87,19 @@ export default function StudentsPage() {
     return <div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" /></div>;
   }
   if (user.role !== 'teacher') {
-    return <div className="rounded-md bg-red-50 p-4 border border-red-200"><p className="text-sm text-red-700">Access restricted to teachers only.</p></div>;
+    return <div className="rounded-md bg-red-50 p-4 border border-red-200"><p className="text-sm text-red-700">{t('studentsPage', 'accessRestricted')}</p></div>;
   }
 
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Students & Reviews</h1>
-        <p className="mt-1 text-sm text-slate-600">View student details and feedback for your courses.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('studentsPage', 'title')}</h1>
+        <p className="mt-1 text-sm text-slate-600">{t('studentsPage', 'subtitle')}</p>
       </header>
 
       {/* Course pills */}
       <div className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200 flex items-center gap-4 flex-wrap">
-        <label className="text-sm font-medium text-slate-700 flex-shrink-0">Course:</label>
+        <label className="text-sm font-medium text-slate-700 flex-shrink-0">{t('studentsPage', 'courseLabel')}</label>
         {isLoadingCourses ? (
           <div className="h-8 w-48 bg-slate-200 animate-pulse rounded-full" />
         ) : (
@@ -115,10 +117,10 @@ export default function StudentsPage() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Enrolled', value: students.length, icon: '👥' },
-          { label: 'Active', value: students.filter(s=>s.status==='active').length, icon: '📚' },
-          { label: 'Completed', value: students.filter(s=>s.status==='completed').length, icon: '🎓' },
-          { label: 'Avg Rating', value: avgRating, icon: '⭐' },
+          { label: t('studentsPage', 'enrolled'), value: students.length, icon: '👥' },
+          { label: t('studentsPage', 'active'), value: students.filter(s=>s.status==='active').length, icon: '📚' },
+          { label: t('studentsPage', 'completed'), value: students.filter(s=>s.status==='completed').length, icon: '🎓' },
+          { label: t('studentsPage', 'avgRating'), value: avgRating, icon: '⭐' },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200 flex items-center gap-3">
             <span className="text-2xl">{s.icon}</span>
@@ -132,10 +134,10 @@ export default function StudentsPage() {
 
       {/* Tabs */}
       <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-        {(['students', 'reviews'] as const).map((t) => (
-          <button key={t} onClick={() => setActiveTab(t)}
-            className={`px-5 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${activeTab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-            {t} {t === 'reviews' && reviews.length > 0 && `(${reviews.length})`}
+        {(['students', 'reviews'] as const).map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className={`px-5 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeTab === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+            {tab === 'students' ? t('studentsPage', 'studentsTab') : t('studentsPage', 'reviewsTab')} {tab === 'reviews' && reviews.length > 0 && `(${reviews.length})`}
           </button>
         ))}
       </div>
@@ -148,24 +150,24 @@ export default function StudentsPage() {
           <div className="p-4 border-b border-slate-200">
             <input
               type="text"
-              placeholder="Search by name, email or phone..."
+              placeholder={t('studentsPage', 'searchPlaceholder')}
               className="w-full max-w-sm rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           {filteredStudents.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">No students found.</div>
+            <div className="p-8 text-center text-slate-500">{t('studentsPage', 'noStudents')}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Student</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Progress</th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Enrolled</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('studentsPage', 'studentCol')}</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('studentsPage', 'phoneCol')}</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('studentsPage', 'statusCol')}</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('studentsPage', 'progressCol')}</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('studentsPage', 'enrolledCol')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -182,7 +184,7 @@ export default function StudentsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-slate-600">{s.phone_number || <span className="text-slate-400 italic">Not provided</span>}</td>
+                      <td className="px-5 py-4 text-slate-600">{s.phone_number || <span className="text-slate-400 italic">{t('studentsPage', 'notProvided')}</span>}</td>
                       <td className="px-5 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           s.status === 'completed' ? 'bg-green-100 text-green-700' :
@@ -216,7 +218,7 @@ export default function StudentsPage() {
         <div className="space-y-4">
           {reviews.length === 0 ? (
             <div className="text-center py-16 text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl">
-              No reviews yet for this course.
+              {t('studentsPage', 'noReviews')}
             </div>
           ) : (
             reviews.map((r) => (
@@ -227,7 +229,7 @@ export default function StudentsPage() {
                       {(r.student_name || 'S').charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-900">{r.student_name || 'Student'}</p>
+                      <p className="font-semibold text-slate-900">{r.student_name || t('studentsPage', 'student')}</p>
                       <StarRating rating={r.rating} />
                     </div>
                   </div>

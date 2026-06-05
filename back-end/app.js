@@ -80,6 +80,14 @@ import { createProctoringRouter } from './routes/proctoringRoutes.js';
 import { createReviewRouter } from './routes/reviewRoutes.js';
 import { createStudentRouter } from './routes/studentRoutes.js';
 import { createNotificationRouter } from './routes/notificationRoutes.js';
+import { createFileRouter } from './routes/fileRoutes.js';
+
+// MinIO
+import { initMinio } from './lib/minio.js';
+import { FileModel } from './models/fileModel.js';
+import { StorageService } from './services/storageService.js';
+import { FileController } from './controllers/fileController.js';
+import { logger } from './utils/logger.js';
 
 
 dotenv.config();
@@ -170,6 +178,15 @@ async function startServer() {
         const userController = new UserController(userService);
         const proctoringController = new ProctoringController(proctoringService);
 
+        // MinIO: init buckets
+        await initMinio();
+        logger.info('[App] MinIO ready');
+
+        // File infrastructure
+        const fileModel      = new FileModel(pool);
+        const storageService = new StorageService(fileModel);
+        const fileController = new FileController(storageService, fileModel, courseModel, enrollmentModel);
+
         // Reviews
         const reviewModel = new ReviewModel(pool);
         const reviewService = new ReviewService(reviewModel, enrollmentModel);
@@ -178,6 +195,7 @@ async function startServer() {
 
 
         // Routes
+app.use('/api', createFileRouter(fileController));
 app.use('/api/auth', createAuthRouter(authController));
 app.use('/api/courses', createCourseRouter(courseController));
 app.use('/api', createModuleRouter(moduleController));
