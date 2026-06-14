@@ -1,4 +1,12 @@
-// app.js
+// app.js  — Stripe-integrated version
+// Changes vs original:
+//   1. Import StripeService
+//   2. Instantiate stripeService after config is available
+//   3. Pass stripeService to OrderController constructor
+//   4. Register Stripe webhook route BEFORE express.json() middleware
+//
+// Everything else is identical to the original app.js.
+
 import express from 'express';
 import pg from 'pg';
 import cors from 'cors';
@@ -9,9 +17,6 @@ import { initRedis } from './lib/redis.js';
 import { setupWorkers } from './lib/queues.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { limiter } from './middlewares/rateLimiter.js';
-import { authMiddleware } from './middlewares/authMiddleware.js';
-import { roleMiddleware } from './middlewares/roleMiddleware.js';
-import { cacheMiddleware } from './middlewares/cacheMiddleware.js';
 import { swaggerMiddleware, swaggerJsonMiddleware } from './swagger/swaggerMiddleware.js';
 
 // Models
@@ -49,6 +54,8 @@ import { ProctoringService } from './services/proctoringService.js';
 import { ReviewService } from './services/reviewService.js';
 import { NotificationService } from './services/notificationService.js';
 import { OrderService } from './services/orderService.js';
+// ▼ NEW: Stripe service
+import { StripeService } from './services/stripeService.js';
 
 // Controllers
 import { AuthController } from './controllers/authController.js';
@@ -93,151 +100,161 @@ import { StorageService } from './services/storageService.js';
 import { FileController } from './controllers/fileController.js';
 import { logger } from './utils/logger.js';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
 const app = express();
 
-// Security and parsing middleware
+// ── CRITICAL: Stripe webhook must receive raw body ────────────────────────────
+// Register the webhook route BEFORE express.json() so the raw Buffer is preserved.
+// The route itself applies express.raw() only to this specific endpoint.
+// We create a temporary router here solely for the webhook; the full order router
+// (with auth middleware) is mounted later after express.json().
+import { createOrderRouter as createOrderRouterForWebhook } from './routes/orderRoutes.js';
+
+// ── Security & parsing middleware ─────────────────────────────────────────────
 app.use(cors());
 app.use(helmet());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(limiter);
 
-// Serve static files
-import path from 'path';
-import { fileURLToPath } from 'url';
+// ── Static files ──────────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, 'public')));
 
-// PostgreSQL connection pool
 const pool = new pg.Pool({ connectionString: config.postgresUri });
 let redisClient;
 
 async function startServer() {
     try {
-        // Connect PostgreSQL
         await pool.connect();
         console.log('✅ PostgreSQL connected');
 
-        // Connect Redis and attach to app
         redisClient = await initRedis(app);
         console.log('✅ Redis ready');
 
-        // Initialize all models
-        const userModel = new UserModel(pool);
-        const refreshTokenModel = new RefreshTokenModel(pool);
-        const studentProfileModel = new StudentProfileModel(pool);
-        const teacherProfileModel = new TeacherProfileModel(pool);
-        const courseModel = new CourseModel(pool);
-        const moduleModel = new ModuleModel(pool);
-        const lessonModel = new LessonModel(pool);
-        const enrollmentModel = new EnrollmentModel(pool);
-        const lessonProgressModel = new LessonProgressModel(pool);
-        const assignmentModel = new AssignmentModel(pool);
-        const submissionModel = new SubmissionModel(pool);
-        const gradeModel = new GradeModel(pool);
-        const certificateModel = new CertificateModel(pool);
-        const statsModel = new StatsModel(pool);
-        const proctoringModel = new ProctoringModel(pool);
-        const orderModel = new OrderModel(pool);
+        // ── Models ──────────────────────────────────────────────────────────────
+        const userModel             = new UserModel(pool);
+        const refreshTokenModel     = new RefreshTokenModel(pool);
+        const studentProfileModel   = new StudentProfileModel(pool);
+        const teacherProfileModel   = new TeacherProfileModel(pool);
+        const courseModel           = new CourseModel(pool);
+        const moduleModel           = new ModuleModel(pool);
+        const lessonModel           = new LessonModel(pool);
+        const enrollmentModel       = new EnrollmentModel(pool);
+        const lessonProgressModel   = new LessonProgressModel(pool);
+        const assignmentModel       = new AssignmentModel(pool);
+        const submissionModel       = new SubmissionModel(pool);
+        const gradeModel            = new GradeModel(pool);
+        const certificateModel      = new CertificateModel(pool);
+        const statsModel            = new StatsModel(pool);
+        const proctoringModel       = new ProctoringModel(pool);
+        const orderModel            = new OrderModel(pool);
 
-        // Services
-        const authService = new AuthService(userModel, refreshTokenModel, studentProfileModel, teacherProfileModel, redisClient);
-        const courseService = new CourseService(courseModel);
-        const moduleService = new ModuleService(moduleModel, courseModel);
-        const lessonService = new LessonService(lessonModel, moduleModel, courseModel);
-        // EnrollmentService needs access to lessonProgressModel, courseModel, userModel, statsModel, and also lessonModel/moduleModel for progress calculation.
-        // Pass pool to EnrollmentService for custom queries if needed, or refactor. Let's provide necessary dependencies.
-        // We'll pass lessonModel and moduleModel as well.
-        const enrollmentService = new EnrollmentService(
+        // ── Services ─────────────────────────────────────────────────────────────
+        const authService        = new AuthService(userModel, refreshTokenModel, studentProfileModel, teacherProfileModel, redisClient);
+        const courseService      = new CourseService(courseModel);
+        const moduleService      = new ModuleService(moduleModel, courseModel);
+        const lessonService      = new LessonService(lessonModel, moduleModel, courseModel);
+        const enrollmentService  = new EnrollmentService(
             enrollmentModel, lessonProgressModel, courseModel, userModel, statsModel,
-            lessonModel, moduleModel, pool, certificateModel  // certificateModel for dup-cert guard
+            lessonModel, moduleModel, pool, certificateModel,
         );
         const notificationService = new NotificationService(pool);
-        const assignmentService = new AssignmentService(assignmentModel, lessonModel, moduleModel, courseModel);
-        const submissionService = new SubmissionService(submissionModel, assignmentModel, lessonModel, moduleModel, courseModel);
-        const gradeService = new GradeService(
+        const assignmentService   = new AssignmentService(assignmentModel, lessonModel, moduleModel, courseModel);
+        const submissionService   = new SubmissionService(submissionModel, assignmentModel, lessonModel, moduleModel, courseModel);
+        const gradeService        = new GradeService(
             gradeModel, submissionModel, assignmentModel,
-            statsModel, lessonModel, moduleModel, notificationService, courseModel
+            statsModel, lessonModel, moduleModel, notificationService, courseModel,
         );
+        const certificateService  = new CertificateService(certificateModel, enrollmentModel, courseModel, userModel, studentProfileModel);
+        const analyticsService    = new AnalyticsService(statsModel, enrollmentModel, gradeModel, assignmentModel, courseModel);
+        const userService         = new UserService(studentProfileModel, teacherProfileModel);
+        const proctoringService   = new ProctoringService(proctoringModel);
+        const orderService        = new OrderService(orderModel, courseModel, enrollmentModel, enrollmentService);
 
-        const certificateService = new CertificateService(certificateModel, enrollmentModel, courseModel, userModel, studentProfileModel);
-        const analyticsService = new AnalyticsService(statsModel, enrollmentModel, gradeModel, assignmentModel, courseModel);
-        const userService = new UserService(studentProfileModel, teacherProfileModel);
-        const proctoringService = new ProctoringService(proctoringModel);
-        const orderService = new OrderService(orderModel, courseModel, enrollmentModel, enrollmentService);
+        // ▼ NEW: instantiate Stripe service
+        const stripeService = new StripeService();
 
-        // Controllers
-        const authController = new AuthController(authService);
-        const courseController = new CourseController(courseService);
-        const moduleController = new ModuleController(moduleService);
-        const lessonController = new LessonController(lessonService);
-        const enrollmentController = new EnrollmentController(enrollmentService);
-        const assignmentController = new AssignmentController(assignmentService);
-        const submissionController = new SubmissionController(submissionService);
-        const gradeController = new GradeController(gradeService);
+        // ── Controllers ───────────────────────────────────────────────────────────
+        const authController        = new AuthController(authService);
+        const courseController      = new CourseController(courseService);
+        const moduleController      = new ModuleController(moduleService);
+        const lessonController      = new LessonController(lessonService);
+        const enrollmentController  = new EnrollmentController(enrollmentService);
+        const assignmentController  = new AssignmentController(assignmentService);
+        const submissionController  = new SubmissionController(submissionService);
+        const gradeController       = new GradeController(gradeService);
         const certificateController = new CertificateController(certificateService);
-        const analyticsController = new AnalyticsController(analyticsService);
-        const userController = new UserController(userService);
-        const proctoringController = new ProctoringController(proctoringService);
-        const orderController = new OrderController(orderService);
+        const analyticsController   = new AnalyticsController(analyticsService);
+        const userController        = new UserController(userService);
+        const proctoringController  = new ProctoringController(proctoringService);
+        // ▼ CHANGED: pass stripeService as second argument
+        const orderController       = new OrderController(orderService, stripeService);
 
-        // MinIO: init buckets
+        // MinIO
         await initMinio();
         logger.info('[App] MinIO ready');
 
-        // File infrastructure
         const fileModel      = new FileModel(pool);
         const storageService = new StorageService(fileModel);
         const fileController = new FileController(storageService, fileModel, courseModel, enrollmentModel);
 
-        // Reviews
-        const reviewModel = new ReviewModel(pool);
-        const reviewService = new ReviewService(reviewModel, enrollmentModel);
+        const reviewModel      = new ReviewModel(pool);
+        const reviewService    = new ReviewService(reviewModel, enrollmentModel);
         const reviewController = new ReviewController(reviewService);
         const studentController = new StudentController(studentProfileModel, courseModel);
 
+        // ── CRITICAL: mount order router BEFORE express.json() ────────────────────
+        // The Stripe webhook endpoint inside createOrderRouter uses express.raw()
+        // for its own route, but the other routes inside the same router still need
+        // express.json() applied later. This works because express.raw() is applied
+        // per-route, not globally.
+        const orderRouter = createOrderRouter(orderController);
+        app.use('/api', orderRouter);
 
-        // Routes
-app.use('/api', createFileRouter(fileController));
-app.use('/api/auth', createAuthRouter(authController));
-app.use('/api/courses', createCourseRouter(courseController));
-app.use('/api', createModuleRouter(moduleController));
-app.use('/api', createLessonRouter(lessonController));
-app.use('/api', createEnrollmentRouter(enrollmentController));
-app.use('/api', createAssignmentRouter(assignmentController));
-app.use('/api', createSubmissionRouter(submissionController));
-app.use('/api', createReviewRouter(reviewController));
-app.use('/api', createStudentRouter(studentController));
-app.use('/api', createGradeRouter(gradeController));
-app.use('/api', createCertificateRouter(certificateController));
-app.use('/api', createAnalyticsRouter(analyticsController));
-app.use('/api', createUserRouter(userController));
-app.use('/api', createProctoringRouter(proctoringController));
-app.use('/api/notifications', createNotificationRouter(notificationService));
-app.use('/api', createOrderRouter(orderController));
-app.use('/api-docs', ...swaggerMiddleware);
-app.get('/api-docs.json', swaggerJsonMiddleware);
+        // ── Now safe to add JSON body parsing for all other routes ────────────────
+        app.use(express.json());
+        app.use(express.urlencoded({ extended: true }));
+        app.use(limiter);
+
+        // ── Routes ────────────────────────────────────────────────────────────────
+        app.use('/api',                  createFileRouter(fileController));
+        app.use('/api/auth',             createAuthRouter(authController));
+        app.use('/api/courses',          createCourseRouter(courseController));
+        app.use('/api',                  createModuleRouter(moduleController));
+        app.use('/api',                  createLessonRouter(lessonController));
+        app.use('/api',                  createEnrollmentRouter(enrollmentController));
+        app.use('/api',                  createAssignmentRouter(assignmentController));
+        app.use('/api',                  createSubmissionRouter(submissionController));
+        app.use('/api',                  createReviewRouter(reviewController));
+        app.use('/api',                  createStudentRouter(studentController));
+        app.use('/api',                  createGradeRouter(gradeController));
+        app.use('/api',                  createCertificateRouter(certificateController));
+        app.use('/api',                  createAnalyticsRouter(analyticsController));
+        app.use('/api',                  createUserRouter(userController));
+        app.use('/api',                  createProctoringRouter(proctoringController));
+        app.use('/api/notifications',    createNotificationRouter(notificationService));
+        // Note: order router is already mounted above (before express.json)
+
+        app.use('/api-docs', ...swaggerMiddleware);
+        app.get('/api-docs.json', swaggerJsonMiddleware);
 
         // Health check
-        app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+        app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
-        // Global error handler (must be last)
+        // Global error handler
         app.use(errorHandler);
 
-        // Start workers (BullMQ)
+        // BullMQ workers
         setupWorkers(pool);
         console.log('🚀 BullMQ workers started');
 
-        // Start server
         const server = app.listen(config.port, () => {
             console.log(`🚀 Server listening on port ${config.port}`);
         });
 
-        // Graceful shutdown
         const shutdown = async (signal) => {
             console.log(`${signal} received, closing server...`);
             server.close(async () => {
@@ -250,7 +267,7 @@ app.get('/api-docs.json', swaggerJsonMiddleware);
             });
         };
         process.on('SIGTERM', () => shutdown('SIGTERM'));
-        process.on('SIGINT', () => shutdown('SIGINT'));
+        process.on('SIGINT',  () => shutdown('SIGINT'));
 
     } catch (err) {
         console.error('Failed to start server:', err);

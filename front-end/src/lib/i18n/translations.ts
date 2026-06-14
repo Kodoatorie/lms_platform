@@ -420,6 +420,32 @@ export const translations = {
         noPendingTitle: { en: 'No pending grades', ru: 'Нет ожидающих оценок', kz: 'Күтілетін бағалар жоқ' },
         noPendingSub: { en: 'All your submissions have been reviewed.', ru: 'Все ваши работы проверены.', kz: 'Барлық жұмыстарыңыз тексерілді.' },
 
+        // ── Student banner ───────────────────────────────────────────────────
+        bannerKeepItUp: { en: '🔥 Keep it up!', ru: '🔥 Продолжай в том же духе!', kz: '🔥 Жалғастыра бер!' },
+        bannerWelcomeBack: { en: '👋 Welcome back!', ru: '👋 С возвращением!', kz: '👋 Қайта оралдыңыз!' },
+        bannerCourseSingular: { en: 'course', ru: 'курс', kz: 'курс' },
+        bannerCoursePlural: { en: 'courses', ru: 'курса', kz: 'курс' },
+        bannerCoursesWaiting: { en: 'waiting for you', ru: 'ждут тебя', kz: 'күтіп тұр' },
+        bannerStartToday: { en: 'Start learning today', ru: 'Начни учиться сегодня', kz: 'Бүгін оқуды бастаңыз' },
+        bannerCompletedCount: { en: 'completed', ru: 'завершено', kz: 'аяқталды' },
+        bannerAvgScore: { en: 'Avg score', ru: 'Средний балл', kz: 'Орташа балл' },
+        viewCoursesBtn: { en: 'View Courses', ru: 'Смотреть курсы', kz: 'Курстарды қарау' },
+
+        // ── CTA card ─────────────────────────────────────────────────────────
+        wantMore: { en: 'Want more?', ru: 'Хочешь больше?', kz: 'Көбірек қалайсыз ба?' },
+        exploreAllCourses: { en: 'Explore All Courses', ru: 'Исследуй все курсы', kz: 'Барлық курстарды зерттеңіз' },
+        exploreCatalog: { en: 'Browse Catalog →', ru: 'Смотреть каталог →', kz: 'Каталогты қарау →' },
+
+        // ── Pending grade badge ───────────────────────────────────────────────
+        awaitingBadge: { en: 'Pending', ru: 'Ждёт', kz: 'Күтуде' },
+
+        // ── Illustration thumbnail category labels ────────────────────────────
+        catMachineLearning: { en: 'Machine Learning', ru: 'Машинное обучение', kz: 'Машиналық оқыту' },
+        catProgramming: { en: 'Programming', ru: 'Программирование', kz: 'Бағдарламалау' },
+        catDesign: { en: 'Design', ru: 'Дизайн', kz: 'Дизайн' },
+        catScience: { en: 'Science', ru: 'Наука', kz: 'Ғылым' },
+        catCourse: { en: 'Course', ru: 'Курс', kz: 'Курс' },
+
         // ── Misc ─────────────────────────────────────────────────────────────
         loading: { en: 'Loading…', ru: 'Загрузка…', kz: 'Жүктелуде…' },
     },
@@ -532,6 +558,41 @@ export const translations = {
         selectCourse: { en: 'Please select a course.', ru: 'Пожалуйста, выберите курс.', kz: 'Курсты таңдаңыз.' },
         selectTeacher: { en: 'Please select a teacher.', ru: 'Пожалуйста, выберите преподавателя.', kz: 'Оқытушыны таңдаңыз.' },
         submitError: { en: 'Failed to submit review. Please try again.', ru: 'Не удалось отправить отзыв. Попробуйте ещё раз.', kz: 'Пікірді жіберу сәтсіз болды. Қайталап көріңіз.' },
+    },
+    // ── Checkout ─────────────────────────────────────────────────────────────
+    checkout: {
+        alreadyOwnedTitle: { en: 'You already have access!', ru: 'У вас уже есть доступ!', kz: 'Сізде қолжетімділік бар!' },
+        alreadyOwnedDesc: { en: "You've already purchased this course and have full access.", ru: 'Вы уже приобрели этот курс и имеете полный доступ.', kz: 'Сіз бұл курсты сатып алғансыз және толық қолжетімділігіңіз бар.' },
+        goToCourse: { en: 'Go to Course', ru: 'Перейти к курсу', kz: 'Курсқа өту' },
+        backToCourses: { en: 'Back to courses', ru: 'К списку курсов', kz: 'Курстарға оралу' },
+        backToCourse: { en: 'Back to course', ru: 'К курсу', kz: 'Курсқа оралу' },
+        courses: { en: 'Courses', ru: 'Курсы', kz: 'Курстар' },
+        checkout: { en: 'Checkout', ru: 'Оформление', kz: 'Сатып алу' },
+        course: { en: 'Course', ru: 'Курс', kz: 'Курс' },
+        by: { en: 'by', ru: 'автор:', kz: 'авторы:' },
+        courseAccess: { en: 'Course access', ru: 'Доступ к курсу', kz: 'Курсқа қолжетімділік' },
+        taxesAndFees: { en: 'Taxes & fees', ru: 'Налоги и сборы', kz: 'Салықтар мен алымдар' },
+        calculatedAtCheckout: { en: 'Calculated at checkout', ru: 'Рассчитывается при оплате', kz: 'Оплата кезінде есептеледі' },
+        total: { en: 'Total', ru: 'Итого', kz: 'Барлығы' },
+        whatsIncluded: { en: "What's included", ru: 'Что включено', kz: 'Не кіреді' },
+        included1: { en: 'Full lifetime access to all course materials', ru: 'Пожизненный доступ ко всем материалам курса', kz: 'Барлық курс материалдарына өмірлік қолжетімділік' },
+        included2: { en: 'Certificate of completion', ru: 'Сертификат об окончании', kz: 'Аяқтау туралы сертификат' },
+        included3: { en: 'Access to course discussions', ru: 'Доступ к обсуждениям курса', kz: 'Курс талқылауларына қолжетімділік' },
+        included4: { en: 'Learn at your own pace, on any device', ru: 'Обучение в своем темпе на любом устройстве', kz: 'Кез келген құрылғыда өз қарқыныңызбен оқыңыз' },
+        included5: { en: '30-day money-back guarantee', ru: '30-дневная гарантия возврата денег', kz: '30 күндік ақшаны қайтару кепілдігі' },
+        completePurchase: { en: 'Complete your purchase', ru: 'Завершите покупку', kz: 'Сатып алуды аяқтаңыз' },
+        redirectingToStripe: { en: "You'll be redirected to Stripe's secure checkout to complete payment.", ru: 'Вы будете перенаправлены на безопасную страницу Stripe для оплаты.', kz: 'Төлемді аяқтау үшін Stripe қауіпсіз бетіне өтесіз.' },
+        amountDueToday: { en: 'Amount due today', ru: 'Сумма к оплате сегодня', kz: 'Бүгінгі төленетін сома' },
+        redirecting: { en: 'Redirecting to Stripe…', ru: 'Перенаправление в Stripe…', kz: 'Stripe-қа өтуде…' },
+        payWithStripe: { en: 'Pay with Stripe', ru: 'Оплатить через Stripe', kz: 'Stripe арқылы төлеу' },
+        securePayments: { en: 'Payments are processed securely by Stripe. Your card details are never stored on our servers.', ru: 'Платежи безопасно обрабатываются Stripe. Данные вашей карты не хранятся на наших серверах.', kz: 'Төлемдерді Stripe қауіпсіз өңдейді. Карточка деректері біздің серверлерде сақталмайды.' },
+        sslCompliant: { en: 'SSL encrypted & PCI-DSS compliant', ru: 'SSL-шифрование и соответствие PCI-DSS', kz: 'SSL шифрланған және PCI-DSS сәйкес' },
+        poweredBy: { en: 'Powered by', ru: 'При поддержке', kz: 'Қолдауымен' },
+        acceptedMethods: { en: 'Accepted payment methods', ru: 'Принимаемые способы оплаты', kz: 'Қабылданатын төлем тәсілдері' },
+        termsAgreement: { en: 'By completing this purchase you agree to our', ru: 'Совершая эту покупку, вы соглашаетесь с нашими', kz: 'Бұл сатып алуды аяқтай отырып, сіз біздің келісесіз' },
+        termsOfService: { en: 'Terms of Service', ru: 'Условиями обслуживания', kz: 'Қызмет көрсету шарттарымен' },
+        and: { en: 'and', ru: 'и', kz: 'және' },
+        privacyPolicy: { en: 'Privacy Policy', ru: 'Политикой конфиденциальности', kz: 'Құпиялық саясатымен' },
     },
 } as const;
 

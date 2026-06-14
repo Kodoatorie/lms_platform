@@ -1,13 +1,13 @@
 export class GradeService {
     constructor(gradeModel, submissionModel, assignmentModel, statsModel, lessonModel, moduleModel, notificationService, courseModel) {
-        this.gradeModel          = gradeModel;
-        this.submissionModel     = submissionModel;
-        this.assignmentModel     = assignmentModel;
-        this.statsModel          = statsModel;
-        this.lessonModel         = lessonModel;
-        this.moduleModel         = moduleModel;
+        this.gradeModel = gradeModel;
+        this.submissionModel = submissionModel;
+        this.assignmentModel = assignmentModel;
+        this.statsModel = statsModel;
+        this.lessonModel = lessonModel;
+        this.moduleModel = moduleModel;
         this.notificationService = notificationService || null;
-        this.courseModel         = courseModel || null;
+        this.courseModel = courseModel || null;
     }
 
     async gradeSubmission(submissionId, score, feedback, gradedById, graderRole) {
@@ -18,9 +18,9 @@ export class GradeService {
 
         // Verify the teacher is the course author
         if (graderRole !== 'admin') {
-            const lesson  = await this.lessonModel?.findById(assignment.lesson_id);
-            const module  = await this.moduleModel?.findById(lesson?.module_id);
-            const course  = await this.courseModel?.findById(module?.course_id);
+            const lesson = await this.lessonModel?.findById(assignment.lesson_id);
+            const module = await this.moduleModel?.findById(lesson?.module_id);
+            const course = await this.courseModel?.findById(module?.course_id);
             if (!course || Number(course.teacher_id) !== Number(gradedById)) {
                 throw new Error('Not authorized: only the course author can grade submissions');
             }

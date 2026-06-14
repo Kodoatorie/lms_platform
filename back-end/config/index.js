@@ -1,3 +1,4 @@
+// config/index.js  (Stripe-integrated version)
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -9,6 +10,19 @@ export default {
     jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN,
     jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+
+    // ── Stripe ────────────────────────────────────────────────────────────────
+    stripe: {
+        // Secret key (sk_test_... for dev, sk_live_... for prod)
+        secretKey:     process.env.STRIPE_SECRET_KEY,
+        // Webhook signing secret from `stripe listen` or Stripe Dashboard
+        webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+        // Public key is consumed by the frontend (NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+        // but kept here for reference / server-side assertions
+        publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+        // Frontend base URL used to build success/cancel redirect URLs
+        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3001',
+    },
 
     minio: {
         endPoint:  process.env.MINIO_ENDPOINT  || 'localhost',

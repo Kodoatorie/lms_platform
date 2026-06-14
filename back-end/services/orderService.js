@@ -1,11 +1,16 @@
-// services/orderService.js
+// services/orderService.js  (Stripe-integrated version)
+// Changes vs original:
+//   1. Added getOrderById() — used by getCheckoutSession controller endpoint
+//   2. handlePaymentSuccess() now also stores stripe_session_id via updateStatus
+//   3. Everything else is identical
+
 import { logger } from '../utils/logger.js';
 
 export class OrderService {
     constructor(orderModel, courseModel, enrollmentModel, enrollmentService) {
-        this.orderModel       = orderModel;
-        this.courseModel      = courseModel;
-        this.enrollmentModel  = enrollmentModel;
+        this.orderModel        = orderModel;
+        this.courseModel       = courseModel;
+        this.enrollmentModel   = enrollmentModel;
         this.enrollmentService = enrollmentService;
     }
 
@@ -33,6 +38,10 @@ export class OrderService {
             paymentProvider,
         });
 
+        // Attach course metadata so the controller can pass it to Stripe
+        order.course_title = course.title;
+        order.cover_url    = course.cover_url || null;
+
         logger.info('[OrderService] Order created', { orderId: order.id, userId, courseId });
         return { type: 'paid', order };
     }
@@ -41,6 +50,7 @@ export class OrderService {
     async handlePaymentSuccess(providerOrderId, providerData = {}) {
         const order = await this.orderModel.findByProviderOrderId(providerOrderId);
         if (!order) throw new Error(`Order not found for provider ID: ${providerOrderId}`);
+
         if (order.status === 'paid') {
             logger.warn('[OrderService] Duplicate webhook, order already paid', { orderId: order.id });
             return order;
@@ -52,7 +62,7 @@ export class OrderService {
             providerData,
         });
 
-        // Auto-enroll student (skip payment check — already confirmed)
+        // Auto-enroll student (skip payment check — already confirmed by Stripe)
         await this.enrollmentService.enrollUser(order.user_id, order.course_id, true);
         logger.info('[OrderService] Payment confirmed, student enrolled', {
             orderId: order.id, userId: order.user_id, courseId: order.course_id,
@@ -68,7 +78,7 @@ export class OrderService {
         logger.info('[OrderService] Payment failed', { orderId: order.id });
     }
 
-    // ── Attach provider order ID after external checkout session is created ───
+    // ── Attach Stripe Checkout Session ID after session is created ────────────
     async attachProviderOrderId(orderId, providerOrderId) {
         return this.orderModel.updateStatus(orderId, { status: 'pending', providerOrderId });
     }
@@ -90,6 +100,11 @@ export class OrderService {
         return this.orderModel.findByUser(userId);
     }
 
+    // NEW: get single order by internal ID (used by getCheckoutSession endpoint)
+    async getOrderById(orderId) {
+        return this.orderModel.findById(orderId);
+    }
+
     async getCourseOrders(courseId, requesterId, requesterRole) {
         const course = await this.courseModel.findById(courseId);
         if (!course) throw new Error('Course not found');
@@ -102,7 +117,7 @@ export class OrderService {
     async checkAccess(userId, courseId) {
         const course = await this.courseModel.findById(courseId);
         if (!course) return false;
-        if (!course.price || Number(course.price) === 0) return true; // free
+        if (!course.price || Number(course.price) === 0) return true;
         const paid = await this.orderModel.findPaidByUserAndCourse(userId, courseId);
         return !!paid;
     }

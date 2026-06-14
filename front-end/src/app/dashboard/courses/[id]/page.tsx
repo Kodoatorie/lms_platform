@@ -158,38 +158,39 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ id: st
     return () => { dispatch(clearCurrentCourse()); };
   }, [dispatch, courseId, user]);
 
-  // ── Enroll ──
-  const handleEnroll = async () => {
+const handleEnroll = async () => {
+  if (!currentCourse) return;
+ 
+  // Free course — enroll directly via enrollment endpoint
+  if (!currentCourse.price || Number(currentCourse.price) === 0) {
     setIsEnrolling(true);
     try {
-      if (currentCourse?.price && Number(currentCourse.price) > 0) {
-        // 1. Create order
-        const { data } = await apiClient.post('/orders', { courseId });
-        if (data?.order?.id) {
-          // 2. Mock payment process for development
-          const providerId = `mock_pi_${data.order.id}_${Date.now()}`;
-          await apiClient.patch(`/orders/${data.order.id}/attach-provider`, { providerOrderId: providerId });
-          // 3. Trigger webhook to mark as paid
-          await apiClient.post('/orders/webhook', {
-            event: 'payment.success',
-            provider_order_id: providerId,
-            provider_data: { method: 'mock_payment' }
-          });
-          setEnrollmentStatus('active');
-          alert(t('pricing', 'paymentSuccess') || 'Payment successful! You are now enrolled.');
-        }
-      } else {
-        await apiClient.post(`/courses/${courseId}/enroll`);
-        setEnrollmentStatus('active');
-      }
+      await apiClient.post(`/courses/${courseId}/enroll`);
+      setEnrollmentStatus('active');
     } catch (err: any) {
-      if (err.response?.data?.message === 'Already enrolled' || err.response?.data?.error === 'You already have access to this course') {
+      if (
+        err.response?.data?.message === 'Already enrolled' ||
+        err.response?.data?.error === 'You already have access to this course'
+      ) {
         setEnrollmentStatus('active');
       } else {
-        alert('Failed to enroll: ' + (err.response?.data?.message || err.response?.data?.error || err.message));
+        alert('Failed to enroll: ' + (err.response?.data?.message || err.message));
       }
-    } finally { setIsEnrolling(false); }
-  };
+    } finally {
+      setIsEnrolling(false);
+    }
+    return;
+  }
+ 
+  // Paid course — redirect to the dedicated Stripe Checkout page
+  // (no loading spinner needed; navigation is instant)
+  router.push(`/dashboard/checkout/${courseId}`);
+};
+ 
+
+
+
+
 
   // ── Claim certificate ──
   const handleClaimCertificate = async () => {

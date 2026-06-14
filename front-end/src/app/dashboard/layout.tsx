@@ -105,7 +105,7 @@ function NotificationBell() {
       {open && (
         <div
           ref={dropdownRef}
-          className="absolute right-0 top-full mt-2 z-50 w-screen max-w-[calc(100vw-2rem)] sm:w-80 bg-white rounded-2xl shadow-xl ring-1 ring-slate-200 overflow-hidden origin-top-right"
+          className="absolute right-[-2rem] xl:right-[-6rem] md:right-[-6rem]  lg:right-0 top-full mt-2 z-50 w-screen max-w-[calc(100vw-2rem)] sm:w-80 bg-white rounded-2xl shadow-xl ring-1 ring-slate-200 overflow-hidden origin-top-right"
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
             <h3 className="font-semibold text-sm text-slate-900">{nT('notifications', 'title')}</h3>
