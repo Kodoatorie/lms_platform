@@ -1,6 +1,6 @@
 # EduTech LMS
 
-> A full-stack Learning Management System built with **Next.js**, **Node.js**, **PostgreSQL**, **MinIO** and **Docker** — supporting multi-role workflows for students, teachers and admins with trilingual UI (EN / RU / KZ).
+> A full-stack Learning Management System built with **Next.js**, **Node.js**, **PostgreSQL**, **MinIO** and **Docker** — supporting multi-role workflows for students, teachers and admins with trilingual UI (EN / RU / KZ) and **native Stripe payments**.
 
 <p align="center">
   <img src="docs/screenshots/dashboard-teacher.png" alt="Teacher Dashboard" width="700"/>
@@ -19,6 +19,7 @@
   - [Environment Variables](#environment-variables)
   - [Run with Docker](#run-with-docker)
   - [Run Locally (dev)](#run-locally-dev)
+- [Stripe Setup](#stripe-setup)
 - [API Reference](#api-reference)
 - [Project Structure](#project-structure)
 - [Roadmap](#roadmap)
@@ -31,10 +32,10 @@
 EduTech LMS is a production-ready e-learning platform where:
 
 - **Teachers** create and publish courses with modules, lessons (text/video), assignments and materials; grade student submissions; track analytics and revenue.
-- **Students** enroll in courses, watch/read lessons, submit homework (text or Google Drive link), receive grades and certificates, leave reviews.
-- **Admins** manage users, issue refunds, oversee all content.
+- **Students** browse courses, purchase paid courses via **Stripe Checkout**, enroll in free courses instantly, submit homework, receive grades and certificates, leave reviews.
+- **Admins** manage users, issue refunds (auto-triggered in Stripe), oversee all content.
 
-The platform supports **paid courses** with a provider-agnostic payment structure (Stripe, Kaspi, CloudPayments) and **file storage** via MinIO — keeping PostgreSQL clean of binaries.
+The platform uses **Stripe Checkout** for all paid course purchases — students are auto-enrolled the moment Stripe confirms payment via webhook. File storage is handled by **MinIO**, keeping PostgreSQL clean of binaries.
 
 ---
 
@@ -48,6 +49,7 @@ The platform supports **paid courses** with a provider-agnostic payment structur
 | Database | PostgreSQL 16 |
 | Cache / Queues | Redis 7 + BullMQ |
 | File Storage | MinIO (S3-compatible) |
+| Payments | **Stripe** (Checkout Sessions + Webhooks) |
 | Auth | JWT (access + refresh) |
 | Validation | Joi |
 | PDF Generation | PDFKit |
@@ -85,6 +87,15 @@ The platform supports **paid courses** with a provider-agnostic payment structur
 - Set price and currency (USD, KZT, RUB, EUR) or mark as free
 - Structured curriculum: Modules → Lessons → Assignments
 
+### 💳 Payments (Stripe)
+- **Stripe Checkout** — students are redirected to Stripe's hosted payment page; card details never touch our servers
+- **Webhook auto-enroll** — student is enrolled the instant Stripe confirms payment (`checkout.session.completed`)
+- **Idempotent** — duplicate webhooks for the same session are safely ignored
+- **Admin refunds** — issuing a refund via the API automatically triggers a Stripe refund on the same PaymentIntent
+- Full order history per student with payment status
+- Revenue analytics per course for teachers
+- Promo code support via Stripe's built-in discount system
+
 ### 📖 Lessons
 - Three content types: **Text** (Markdown editor with toolbar + live preview), **Video** (YouTube embed), **Practice**
 - Per-lesson open date and deadline
@@ -102,28 +113,18 @@ The platform supports **paid courses** with a provider-agnostic payment structur
 - Unique verification codes
 - Publicly verifiable via `/certificates/verify/:code`
 
-### 💳 Orders & Payments
-- Provider-agnostic order model (Stripe / Kaspi / CloudPayments)
-- Webhook endpoint auto-enrolls student after confirmed payment
-- Full order history for students
-- Revenue analytics for teachers per course
-- Refund flow for admins
-
 ### ⭐ Reviews
 - Two review types: **Course review** and **Teacher review**
 - Star rating (1–5) with comment
 - Filterable by teacher and rating
-- Teachers see their own course reviews highlighted
 
 ### 📊 Analytics
-- Teacher dashboard: total students, active courses, avg completion rate
-- Per-course: submission stats, pending reviews
+- Teacher dashboard: total students, active courses, avg completion rate, revenue per course
 - Student dashboard: enrolled courses with progress bars, awaiting grades
 
 ### 🔔 Notifications
 - In-app notifications (grade received, course update, etc.)
-- Unread count badge
-- Mark all as read
+- Unread count badge; mark all as read
 
 ### 🌐 Internationalisation
 - Full UI in **English**, **Russian** and **Kazakh**
@@ -132,10 +133,10 @@ The platform supports **paid courses** with a provider-agnostic payment structur
 
 ### 🔒 Security
 - Rate limiting: auth (5 req/min), uploads (10 req/min), general API (30 req/s)
+- Stripe webhook signature verified on every request (`stripe.webhooks.constructEvent`)
 - Private files accessible only through API with auth + enrollment check
 - Input sanitization on all lesson content (XSS prevention)
-- Helmet security headers
-- Non-root Docker containers
+- Helmet security headers; non-root Docker containers
 
 ---
 
@@ -153,16 +154,53 @@ The platform supports **paid courses** with a provider-agnostic payment structur
     │  :3001      │        │             │
     └─────────────┘        └──────┬──────┘
                                   │
-              ┌───────────────────┼───────────────────┐
-              │                   │                   │
-       ┌──────▼──────┐   ┌────────▼──────┐   ┌───────▼──────┐
-       │ PostgreSQL  │   │    Redis       │   │    MinIO     │
-       │  :5432      │   │   :6379        │   │  :9000/:9001 │
-       │  (metadata) │   │ (cache/queues) │   │  (files)     │
-       └─────────────┘   └───────────────┘   └──────────────┘
+              ┌───────────────────┼─────────────────────┐
+              │                   │                     │
+       ┌──────▼──────┐   ┌────────▼──────┐   ┌─────────▼──────┐
+       │ PostgreSQL  │   │    Redis       │   │    MinIO        │
+       │  :5432      │   │   :6379        │   │  :9000/:9001    │
+       │  (metadata) │   │ (cache/queues) │   │  (files)        │
+       └─────────────┘   └───────────────┘   └─────────────────┘
+
+                                ▲  webhook
+                         ┌──────┴──────┐
+                         │   Stripe    │
+                         │  (payments) │
+                         └─────────────┘
 ```
 
-### Storage buckets
+### Payment Flow
+
+```
+Student clicks "Buy Course"
+        │
+        ▼
+/dashboard/checkout/[courseId]    ← order summary + pay button
+        │  POST /api/orders
+        ▼
+Express → StripeService.createCheckoutSession()
+        │
+        ▼
+stripe.com/checkout  ← student enters card here (PCI-DSS compliant)
+        │
+        ├─ success ──▶ /dashboard/checkout/[courseId]/success
+        │                  GET /api/orders/:id/checkout-session
+        │                  Shows receipt + "Start Learning" button
+        │
+        └─ cancel  ──▶ /dashboard/checkout/[courseId]/cancel
+                          "Try again" returns to checkout
+
+In parallel (Stripe → your server):
+POST /api/orders/stripe/webhook  (checkout.session.completed)
+        │
+        ▼
+OrderService.handlePaymentSuccess()
+        │
+        ▼
+EnrollmentService.enrollUser()   ← student gets course access
+```
+
+### Storage Buckets
 
 | Bucket | Access | Contents |
 |--------|--------|----------|
@@ -177,18 +215,21 @@ The platform supports **paid courses** with a provider-agnostic payment structur
 
 - [Docker](https://docs.docker.com/get-docker/) & Docker Compose v2
 - Node.js 20+ (for local dev only)
+- A [Stripe account](https://dashboard.stripe.com/register) (free to create)
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values:
+#### Backend — copy and fill in:
 
 ```bash
+cd backend
 cp .env.example .env
 ```
 
 ```env
 # Server
 PORT=3000
+NODE_ENV=development
 
 # PostgreSQL
 POSTGRES_URI=postgresql://edu:edu@localhost:5432/edutech
@@ -202,6 +243,14 @@ JWT_REFRESH_SECRET=your_refresh_secret_here
 JWT_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 
+# Stripe — get keys at https://dashboard.stripe.com/apikeys
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...   # see Stripe Setup section below
+
+# Frontend base URL (for Stripe redirect URLs)
+FRONTEND_URL=http://localhost:3001
+
 # MinIO
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
@@ -211,30 +260,38 @@ MINIO_SECRET_KEY=minioadmin
 MINIO_REGION=us-east-1
 ```
 
-> ⚠️ Never commit `.env` to version control. The `.gitignore` excludes it automatically.
+#### Frontend — copy and fill in:
+
+```bash
+cd frontend
+cp .env.local.example .env.local
+```
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+```
+
+> ⚠️ Never commit `.env` or `.env.local` to version control.
 
 ### Run with Docker
 
 ```bash
-# 1. Clone the repository
+# 1. Clone the repo
 git clone https://github.com/your-username/edutech-lms.git
 cd edutech-lms
 
-# 2. Copy environment file
-cp .env.example .env
-# Edit .env — at minimum set JWT_SECRET and JWT_REFRESH_SECRET
+# 2. Fill in environment variables (see above)
+cp backend/.env.example backend/.env
 
 # 3. Start all services
 docker compose up -d
 
-# 4. Run database migrations
-docker compose exec api node -e "
-  import('./db/migrate.js').then(m => m.runMigrations())
-"
-# Or run SQL files directly:
+# 4. Apply database migrations
 docker compose exec postgres psql -U edu -d edutech \
   -f /migrations/add_minio_files.sql \
-  -f /migrations/add_publishing_and_orders.sql
+  -f /migrations/add_publishing_and_orders.sql \
+  -f /migrations/add_stripe_integration.sql
 ```
 
 Services will be available at:
@@ -249,23 +306,74 @@ Services will be available at:
 ### Run Locally (dev)
 
 ```bash
-# Terminal 1 — Backend
+# Terminal 1 — infrastructure
+docker compose up -d postgres redis minio
+
+# Terminal 2 — backend
 cd backend
 npm install
-npm run dev         # nodemon, restarts on change
+npm run dev
 
-# Terminal 2 — Frontend
+# Terminal 3 — frontend
 cd frontend
 npm install
-npm run dev         # Next.js dev server on :3001
+npm run dev
+
+# Terminal 4 — Stripe webhook forwarding (see Stripe Setup)
+stripe listen --forward-to localhost:3000/api/orders/stripe/webhook
 ```
 
-You'll also need PostgreSQL, Redis and MinIO running locally or via Docker:
+---
+
+## Stripe Setup
+
+### 1. Install Stripe SDK
 
 ```bash
-# Start only infrastructure services
-docker compose up -d postgres redis minio
+cd backend
+npm install stripe
 ```
+
+### 2. Get API keys
+
+Go to [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys) and copy:
+- **Publishable key** → `STRIPE_PUBLISHABLE_KEY` (backend) and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (frontend)
+- **Secret key** → `STRIPE_SECRET_KEY` (backend only, never expose)
+
+### 3. Set up webhook (local dev)
+
+Install the [Stripe CLI](https://stripe.com/docs/stripe-cli#install):
+
+```bash
+# macOS
+brew install stripe/stripe-cli/stripe
+
+# Login
+stripe login
+
+# Forward Stripe events to your local server
+stripe listen --forward-to localhost:3000/api/orders/stripe/webhook
+```
+
+The CLI will print a `whsec_...` signing secret — copy it to `STRIPE_WEBHOOK_SECRET`.
+
+### 4. Set up webhook (production)
+
+1. Go to [Stripe Dashboard → Developers → Webhooks](https://dashboard.stripe.com/webhooks)
+2. Click **Add endpoint**
+3. URL: `https://yourdomain.com/api/orders/stripe/webhook`
+4. Select events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`
+5. Copy the **Signing secret** → `STRIPE_WEBHOOK_SECRET`
+
+### Test cards
+
+| Card number | Result |
+|-------------|--------|
+| `4242 4242 4242 4242` | Successful payment |
+| `4000 0000 0000 0002` | Card declined |
+| `4000 0025 0000 3155` | Requires 3D Secure |
+
+Use any future expiry date and any 3-digit CVC.
 
 ---
 
@@ -275,26 +383,26 @@ Full interactive documentation is available at `/api-docs` (Swagger UI) when the
 
 ### Authentication
 
-All protected endpoints require a Bearer token in the `Authorization` header:
+All protected endpoints require a Bearer token:
 
 ```
 Authorization: Bearer <access_token>
 ```
 
-Tokens expire in 15 minutes. Use `POST /api/auth/refresh` with your refresh token to get a new access token.
+Tokens expire in 15 minutes. Use `POST /api/auth/refresh` to renew.
 
-### Core Endpoints
+### Auth
 
-#### Auth
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/auth/register` | Register new user |
-| `POST` | `/api/auth/login` | Login, returns access + refresh tokens |
+| `POST` | `/api/auth/login` | Login → access + refresh tokens |
 | `POST` | `/api/auth/refresh` | Refresh access token |
 | `POST` | `/api/auth/logout` | Invalidate refresh token |
 | `GET` | `/api/auth/me` | Current user profile |
 
-#### Courses
+### Courses
+
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
 | `GET` | `/api/courses` | All | List courses (students see published only) |
@@ -306,7 +414,8 @@ Tokens expire in 15 minutes. Use `POST /api/auth/refresh` with your refresh toke
 | `PATCH` | `/api/courses/:id/unpublish` | Teacher | Unpublish course |
 | `POST` | `/api/courses/:id/cover` | Teacher | Upload cover image (≤ 5 MB) |
 
-#### Lessons & Materials
+### Lessons & Materials
+
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
 | `POST` | `/api/modules/:id/lessons` | Teacher | Create lesson |
@@ -314,9 +423,10 @@ Tokens expire in 15 minutes. Use `POST /api/auth/refresh` with your refresh toke
 | `POST` | `/api/lessons/:id/complete` | Student | Mark lesson complete |
 | `POST` | `/api/lessons/:id/files` | Teacher | Upload material (≤ 200 MB) |
 | `GET` | `/api/lessons/:id/files` | Enrolled | List lesson materials |
-| `GET` | `/api/files/:id/download` | Enrolled | Get presigned download URL (1h) |
+| `GET` | `/api/files/:id/download` | Enrolled | Get presigned download URL (1 h) |
 
-#### Assignments & Submissions
+### Assignments & Submissions
+
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
 | `POST` | `/api/lessons/:id/assignments` | Teacher | Create assignment |
@@ -325,15 +435,32 @@ Tokens expire in 15 minutes. Use `POST /api/auth/refresh` with your refresh toke
 | `GET` | `/api/assignments/:id/submissions` | Teacher | All submissions |
 | `POST` | `/api/submissions/:id/grade` | Teacher | Grade a submission |
 
-#### Orders
+### Orders & Payments
+
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| `POST` | `/api/orders` | Student | Create order for paid course |
+| `POST` | `/api/orders` | Student | Create order → returns `checkoutUrl` for Stripe |
 | `GET` | `/api/orders/me` | Student | My order history |
-| `POST` | `/api/orders/webhook` | Public | Payment provider webhook |
-| `PATCH` | `/api/orders/:id/refund` | Admin | Issue refund |
+| `GET` | `/api/orders/:id/checkout-session` | Student | Verify payment status (used on success page) |
+| `POST` | `/api/orders/stripe/webhook` | Public (Stripe only) | Stripe event receiver — do not call manually |
+| `PATCH` | `/api/orders/:id/attach-provider` | Student | Attach external provider session ID |
+| `PATCH` | `/api/orders/:id/refund` | Admin | Issue refund (also refunds on Stripe) |
+| `GET` | `/api/courses/:id/orders` | Teacher / Admin | All orders for a course |
 
-#### Reviews
+**POST `/api/orders` — example response (paid course):**
+```json
+{
+  "type": "paid",
+  "order": { "id": 42, "status": "pending", "amount": "29.99", "currency": "USD" },
+  "sessionId": "cs_test_...",
+  "checkoutUrl": "https://checkout.stripe.com/pay/cs_test_..."
+}
+```
+
+The frontend redirects `window.location.href = checkoutUrl` — Stripe handles everything from there.
+
+### Reviews
+
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
 | `POST` | `/api/courses/:id/reviews` | Student | Leave course review |
@@ -357,83 +484,92 @@ Tokens expire in 15 minutes. Use `POST /api/auth/refresh` with your refresh toke
 edutech-lms/
 ├── backend/
 │   ├── config/
-│   │   └── index.js              # env config (DB, JWT, MinIO, upload limits)
-│   ├── controllers/              # HTTP handlers
+│   │   └── index.js              # env config (DB, JWT, MinIO, Stripe)
+│   ├── controllers/
 │   │   ├── authController.js
 │   │   ├── courseController.js
 │   │   ├── fileController.js
-│   │   ├── orderController.js
+│   │   ├── orderController.js    # stripeWebhook, getCheckoutSession
 │   │   └── ...
 │   ├── middlewares/
 │   │   ├── authMiddleware.js     # JWT verification
 │   │   ├── roleMiddleware.js     # RBAC
 │   │   ├── uploadMiddleware.js   # Multer + size/type validation
 │   │   ├── rateLimiter.js        # express-rate-limit
-│   │   ├── validationMiddleware.js # Joi schemas
-│   │   └── errorHandler.js       # Structured error responses
+│   │   └── errorHandler.js
 │   ├── models/                   # PostgreSQL queries (no ORM)
 │   │   ├── courseModel.js
-│   │   ├── fileModel.js          # MinIO file metadata
+│   │   ├── fileModel.js
 │   │   ├── orderModel.js
 │   │   └── ...
-│   ├── services/                 # Business logic
-│   │   ├── storageService.js     # MinIO upload/download/delete
+│   ├── services/
+│   │   ├── stripeService.js      # Checkout Session · webhook · refund
 │   │   ├── orderService.js       # Payment flow + auto-enroll
+│   │   ├── storageService.js     # MinIO upload/download/delete
 │   │   └── ...
 │   ├── routes/
-│   ├── lib/
-│   │   └── minio.js              # MinIO client + bucket init
-│   ├── utils/
-│   │   ├── logger.js             # Structured JSON logger
-│   │   └── sanitize.js           # XSS sanitization
+│   │   ├── orderRoutes.js        # webhook with express.raw(), /checkout-session
+│   │   └── ...
 │   ├── migrations/
 │   │   ├── add_minio_files.sql
-│   │   └── add_publishing_and_orders.sql
-│   ├── nginx/
-│   │   └── nginx.conf
+│   │   ├── add_publishing_and_orders.sql
+│   │   └── add_stripe_integration.sql   # stripe_session_id column + index
+│   ├── lib/
+│   │   ├── minio.js
+│   │   └── redis.js
+│   ├── utils/
+│   │   ├── logger.js
+│   │   └── sanitize.js
+│   ├── nginx/nginx.conf
 │   ├── Dockerfile
 │   ├── docker-compose.yml
+│   ├── app.js
 │   └── .env.example
 │
 └── frontend/
     ├── src/
     │   ├── app/
     │   │   └── dashboard/
-    │   │       ├── page.tsx           # Dashboard (role-aware)
-    │   │       ├── courses/           # Course list + detail + lesson viewer
-    │   │       ├── grading/           # Teacher grading interface
-    │   │       ├── grades/            # Student grades
-    │   │       ├── orders/            # Student order history
-    │   │       ├── reviews/           # Reviews (course + teacher)
-    │   │       ├── analytics/
-    │   │       └── ...
+    │   │       ├── page.tsx
+    │   │       ├── courses/
+    │   │       │   └── [id]/page.tsx      # handleEnroll → router.push to checkout
+    │   │       ├── checkout/
+    │   │       │   └── [courseId]/
+    │   │       │       ├── page.tsx       # Order summary + "Pay with Stripe" button
+    │   │       │       ├── success/
+    │   │       │       │   └── page.tsx   # Receipt + "Start Learning"
+    │   │       │       └── cancel/
+    │   │       │           └── page.tsx   # Cancelled — Try Again
+    │   │       ├── orders/page.tsx
+    │   │       ├── grading/
+    │   │       ├── grades/
+    │   │       ├── reviews/
+    │   │       └── analytics/
     │   ├── components/
-    │   │   ├── FileUploader.tsx       # Drag-and-drop file uploader
-    │   │   ├── LessonMaterials.tsx    # Lesson file list + download
-    │   │   └── MarkdownEditor.tsx     # Editor with toolbar + live preview
+    │   │   ├── FileUploader.tsx
+    │   │   ├── LessonMaterials.tsx
+    │   │   └── MarkdownEditor.tsx
     │   ├── store/
-    │   │   ├── courses/coursesSlice.ts
-    │   │   └── ...
     │   ├── lib/
-    │   │   ├── api/client.ts          # Axios instance
-    │   │   └── i18n/                  # EN / RU / KZ translations
+    │   │   ├── api/client.ts
+    │   │   └── i18n/
     │   └── types/index.ts
     ├── Dockerfile
-    └── next.config.ts
+    ├── next.config.ts
+    └── .env.local.example
 ```
 
----
-
+<!--
 ## Roadmap
 
-- [ ] **Stripe / Kaspi integration** — connect payment provider to existing order model
+- [x] **Stripe Checkout** — full hosted payment flow with webhook auto-enroll
+- [x] **Admin refunds** — API refund triggers Stripe refund automatically
 - [ ] **Real-time notifications** — WebSocket or SSE (BullMQ workers already in place)
-- [ ] **Mobile app** — React Native (API is already mobile-ready)
-- [ ] **Promo codes** — discount system tied to order creation
+- [ ] **Mobile app** — React Native (API is mobile-ready)
 - [ ] **Avatar uploads** — MinIO `public-assets/avatars/:userId`
 - [ ] **Unit & integration tests** — Jest + Supertest on critical endpoints
 - [ ] **Full-text search** — PostgreSQL `tsvector` on course/lesson content
-
+-->
 ---
 
 ## License
