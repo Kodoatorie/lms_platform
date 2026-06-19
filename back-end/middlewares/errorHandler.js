@@ -11,6 +11,7 @@ const ERROR_STATUS_MAP = {
     'requires payment': 402,
     'File too large': 413,
     'File type': 415,
+    'EMAIL_NOT_VERIFIED': 403,
 };
 
 function resolveStatus(err) {

@@ -23,6 +23,9 @@ export default {
         // Frontend base URL used to build success/cancel redirect URLs
         frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3001',
     },
+    resend: {
+        apiKey: process.env.RESEND_API_KEY,
+    },
 
     minio: {
         endPoint:  process.env.MINIO_ENDPOINT  || 'localhost',

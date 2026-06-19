@@ -3,15 +3,16 @@ import { generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRef
 import crypto from 'crypto';
 
 export class AuthService {
-    constructor(userModel, refreshTokenModel, studentProfileModel, teacherProfileModel, redisClient) {
+    constructor(userModel, refreshTokenModel, studentProfileModel, teacherProfileModel, redisClient, emailService) {
         this.userModel = userModel;
         this.refreshTokenModel = refreshTokenModel;
         this.studentProfileModel = studentProfileModel;
         this.teacherProfileModel = teacherProfileModel;
         this.redis = redisClient;
+        this.emailService = emailService;
     }
 
-    async register(email, password, role, fullName) {
+    async register(email, password, role, fullName, locale = 'ru') {
         const existing = await this.userModel.findByEmail(email);
         if (existing) throw new Error('User already exists');
         const hashed = await hashPassword(password);
@@ -21,13 +22,48 @@ export class AuthService {
         } else if (role === 'teacher') {
             await this.teacherProfileModel.create(user.id, fullName);
         }
-        const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user);
-        const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+        
+        // Generate verification token (6-digit random number)
+        const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+        await this.userModel.updateVerificationToken(user.id, verificationToken);
+
+        // Send email (non-blocking)
+        this.emailService.sendVerificationEmail(email, verificationToken, locale).catch(err => {
+            // log error but don't fail registration
+            console.error('[AuthService] Email verification send failed:', err.message);
+        });
+
+        return { success: true, email: user.email };
+    }
+
+    async forgotPassword(email, locale = 'ru') {
+        const user = await this.userModel.findByEmail(email);
+        if (!user) return true; // return true to avoid email enumeration security issues
+
+        const resetToken = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7);
-        await this.refreshTokenModel.create(user.id, refreshHash, expiresAt);
-        return { user: { id: user.id, email: user.email, role: user.role }, accessToken, refreshToken };
+        expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour
+
+        await this.userModel.updateResetToken(email, resetToken, expiresAt);
+        await this.emailService.sendPasswordResetEmail(email, resetToken, locale);
+        return true;
+    }
+
+    async resetPassword(token, newPassword) {
+        const user = await this.userModel.findByResetToken(token);
+        if (!user) throw new Error('Invalid or expired reset token');
+
+        const hashed = await hashPassword(newPassword);
+        await this.userModel.updatePassword(user.id, hashed);
+        return true;
+    }
+
+    async verifyEmail(token) {
+        const user = await this.userModel.findByVerificationToken(token);
+        if (!user) throw new Error('Invalid verification token');
+
+        await this.userModel.verifyEmail(token);
+        return true;
     }
 
     async login(email, password) {
@@ -35,6 +71,11 @@ export class AuthService {
         if (!user) throw new Error('Invalid credentials');
         const valid = await comparePassword(password, user.password_hash);
         if (!valid) throw new Error('Invalid credentials');
+
+        if (!user.email_verified) {
+            throw new Error('EMAIL_NOT_VERIFIED');
+        }
+
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
         const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');

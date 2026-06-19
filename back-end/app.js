@@ -54,8 +54,8 @@ import { ProctoringService } from './services/proctoringService.js';
 import { ReviewService } from './services/reviewService.js';
 import { NotificationService } from './services/notificationService.js';
 import { OrderService } from './services/orderService.js';
-// ▼ NEW: Stripe service
 import { StripeService } from './services/stripeService.js';
+import { EmailService } from './services/emailService.js';
 
 // Controllers
 import { AuthController } from './controllers/authController.js';
@@ -153,7 +153,10 @@ async function startServer() {
         const orderModel            = new OrderModel(pool);
 
         // ── Services ─────────────────────────────────────────────────────────────
-        const authService        = new AuthService(userModel, refreshTokenModel, studentProfileModel, teacherProfileModel, redisClient);
+        const emailService       = new EmailService();
+        const authService        = new AuthService(
+            userModel, refreshTokenModel, studentProfileModel, teacherProfileModel, redisClient, emailService
+        );
         const courseService      = new CourseService(courseModel);
         const moduleService      = new ModuleService(moduleModel, courseModel);
         const lessonService      = new LessonService(lessonModel, moduleModel, courseModel);

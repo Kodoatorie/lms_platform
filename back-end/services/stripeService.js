@@ -21,7 +21,7 @@ export class StripeService {
      * @param {string}  params.customerEmail - Pre-fill email on Stripe Checkout
      * @returns {Promise<{sessionId: string, url: string}>}
      */
-    async createCheckoutSession({ orderId, courseTitle, coverUrl, amount, currency, customerEmail }) {
+    async createCheckoutSession({ orderId, courseId, courseTitle, coverUrl, amount, currency, customerEmail }) {
         const unitAmount = Math.round(Number(amount) * 100); // Stripe uses cents
 
         const sessionParams = {
@@ -36,17 +36,20 @@ export class StripeService {
                         unit_amount: unitAmount,
                         product_data: {
                             name: courseTitle,
-                            ...(coverUrl ? { images: [coverUrl] } : {}),
+                            ...(coverUrl && (coverUrl.startsWith('http://') || coverUrl.startsWith('https://') || coverUrl.startsWith('/')) ? {
+                                images: [coverUrl.startsWith('/') ? `${config.stripe.frontendUrl}${coverUrl}` : coverUrl]
+                            } : {}),
                         },
                     },
                 },
             ],
             metadata: {
                 order_id: String(orderId),
+                course_id: String(courseId),
                 course_title: courseTitle,
             },
-            success_url: `${config.stripe.frontendUrl}/dashboard/checkout/${orderId}/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url:  `${config.stripe.frontendUrl}/dashboard/checkout/${orderId}/cancel`,
+            success_url: `${config.stripe.frontendUrl}/dashboard/checkout/${courseId}/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url:  `${config.stripe.frontendUrl}/dashboard/checkout/${courseId}/cancel`,
             // Collect billing address for receipt
             billing_address_collection: 'auto',
             // Allow promo codes

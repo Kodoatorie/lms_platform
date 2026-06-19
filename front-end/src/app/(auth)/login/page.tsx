@@ -1,29 +1,41 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { loginUser, clearError } from '../../../store/auth/authSlice';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import { APP_NAME } from '../../../lib/constants';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 export default function LoginPage() {
+ const { t } = useTranslation();
  const [email, setEmail] = useState('');
  const [password, setPassword] = useState('');
  const dispatch = useAppDispatch();
  const { isLoading, error } = useAppSelector((state) => state.auth);
  const router = useRouter();
 
- const handleSubmit = async (e: React.FormEvent) => {
- e.preventDefault();
- if (error) dispatch(clearError());
+ useEffect(() => {
+   // Clear errors on mount
+   dispatch(clearError());
+ }, [dispatch]);
 
- const resultAction = await dispatch(loginUser({ email, password }));
- if (loginUser.fulfilled.match(resultAction)) {
- router.push('/dashboard');
- }
- };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (error) dispatch(clearError());
+
+    const resultAction = await dispatch(loginUser({ email, password }));
+    if (loginUser.fulfilled.match(resultAction)) {
+      router.push('/dashboard');
+    } else {
+      const payload = resultAction.payload as any;
+      if (payload?.error === 'EMAIL_NOT_VERIFIED') {
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      }
+    }
+  };
 
  return (
  <div className="flex min-h-screen items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50 relative overflow-hidden">
@@ -38,7 +50,7 @@ export default function LoginPage() {
  Welcome to {APP_NAME}
  </h2>
  <p className="mt-2 text-center text-sm text-slate-600 ">
- Sign in to your account
+ {t('auth', 'login')}
  </p>
  </div>
 
@@ -55,7 +67,7 @@ export default function LoginPage() {
  type="email"
  autoComplete="email"
  required
- label="Email address"
+ label={t('auth', 'email')}
  placeholder="you@example.com"
  value={email}
  onChange={(e) => setEmail(e.target.value)}
@@ -66,7 +78,7 @@ export default function LoginPage() {
  type="password"
  autoComplete="current-password"
  required
- label="Password"
+ label={t('auth', 'password')}
  placeholder="••••••••"
  value={password}
  onChange={(e) => setPassword(e.target.value)}
@@ -87,8 +99,8 @@ export default function LoginPage() {
  </div>
 
  <div className="text-sm">
- <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 :text-indigo-300 transition-colors">
- Forgot your password?
+ <a href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500 :text-indigo-300 transition-colors">
+ {t('auth', 'forgotPasswordLink')}
  </a>
  </div>
  </div>
@@ -100,15 +112,15 @@ export default function LoginPage() {
  size="lg"
  isLoading={isLoading}
  >
- Sign in
+ {t('auth', 'login')}
  </Button>
  </div>
  </form>
 
  <p className="text-center text-sm text-slate-600 ">
- Don't have an account?{' '}
+ {t('auth', 'noAccount')}{' '}
  <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500 :text-indigo-300 transition-colors">
- Register here
+ {t('auth', 'register')}
  </a>
  </p>
  </div>

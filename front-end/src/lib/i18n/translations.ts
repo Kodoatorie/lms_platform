@@ -73,6 +73,16 @@ export const translations = {
         teacher: { en: 'Teacher', ru: 'Преподаватель', kz: 'Оқытушы' },
         haveAccount: { en: 'Already have an account?', ru: 'Уже есть аккаунт?', kz: 'Аккаунт бар ма?' },
         noAccount: { en: "Don't have an account?", ru: 'Нет аккаунта?', kz: 'Аккаунт жоқ па?' },
+        forgotPasswordTitle: { en: 'Forgot Password', ru: 'Восстановление пароля', kz: 'Құпия сөзді қалпына келтіру' },
+        forgotPasswordSubtitle: { en: 'Enter your email to receive a password reset link.', ru: 'Введите ваш email, чтобы получить ссылку для сброса пароля.', kz: 'Құпия сөзді қалпына келтіру сілтемесін алу үшін email енгізіңіз.' },
+        sendResetLink: { en: 'Send Reset Link', ru: 'Отправить ссылку', kz: 'Сілтемені жіберу' },
+        forgotPasswordLink: { en: 'Forgot your password?', ru: 'Забыли пароль?', kz: 'Құпия сөзді ұмыттыңыз ба?' },
+        backToLogin: { en: 'Back to sign in', ru: 'Вернуться к входу', kz: 'Кіруге оралу' },
+        resetLinkSent: { en: 'Reset link has been sent to your email!', ru: 'Ссылка для сброса пароля отправлена на ваш email!', kz: 'Құпия сөзді қалпына келтіру сілтемесі email-ыңызға жіберілді!' },
+        resetPasswordTitle: { en: 'Reset Password', ru: 'Сброс пароля', kz: 'Құпия сөзді қалпына келтіру' },
+        newPassword: { en: 'New Password', ru: 'Новый пароль', kz: 'Жаңа құпия сөз' },
+        confirmNewPassword: { en: 'Confirm New Password', ru: 'Подтвердите новый пароль', kz: 'Жаңа құпия сөзді растаңыз' },
+        resetSuccess: { en: 'Password reset successfully! You can now log in.', ru: 'Пароль успешно изменен! Теперь вы можете войти.', kz: 'Құпия сөз сәтті өзгертілді! Енді жүйеге кіре аласыз.' },
     },
     // ── Courses ───────────────────────────────────────────────────────────────
     courses: {
@@ -201,6 +211,9 @@ export const translations = {
     // ── Orders ────────────────────────────────────────────────────────────────
     orders: {
         title: { en: 'My Orders', ru: 'Мои заказы', kz: 'Менің тапсырыстарым' },
+        Unlocked: { en: 'Unlocked', ru: 'Разблокировано', kz: 'Ашық' },
+        Explore_courses_and_start_learning: { en: 'Explore courses and start learning!', ru: 'Исследуйте курсы и начните учиться!', kz: 'Курстарды зерттеп, оқуды бастаңыз!' },
+        allOrders: { en: 'All Orders', ru: 'Все заказы', kz: 'Барлық тапсырыстар' },
         noOrders: { en: 'No orders yet', ru: 'Заказов пока нет', kz: 'Тапсырыстар жоқ' },
         status: { en: 'Status', ru: 'Статус', kz: 'Күй' },
         pending: { en: 'Pending', ru: 'Ожидает оплаты', kz: 'Төлем күтілуде' },

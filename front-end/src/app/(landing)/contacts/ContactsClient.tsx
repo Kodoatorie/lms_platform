@@ -1,12 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getDictionary } from '../../../i18n/dictionaries';
+import { getLocale } from '../../../lib/i18n/useTranslation';
 import { MapPin, Phone, Mail, Loader2 } from 'lucide-react';
 
 export default function ContactsClient({ locale }: { locale: string }) {
+  const [activeLocale, setActiveLocale] = useState(locale);
   const [isLoading, setIsLoading] = useState(false);
-  const t = getDictionary(locale);
+
+  useEffect(() => {
+    const currentLocale = getLocale();
+    if (currentLocale && currentLocale !== activeLocale) {
+      setActiveLocale(currentLocale);
+    }
+  }, []);
+
+  const normalizedLocale = activeLocale === 'kz' ? 'kk' : activeLocale;
+  const t = getDictionary(normalizedLocale);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

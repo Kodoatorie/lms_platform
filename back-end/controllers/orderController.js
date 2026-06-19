@@ -32,6 +32,7 @@ export class OrderController {
             if (paymentProvider === 'stripe') {
                 const session = await this.stripeService.createCheckoutSession({
                     orderId:       result.order.id,
+                    courseId:      result.order.course_id,
                     courseTitle:   result.order.course_title || `Course #${result.order.course_id}`,
                     coverUrl:      result.order.cover_url || null,
                     amount:        result.order.amount,

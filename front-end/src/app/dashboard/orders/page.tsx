@@ -23,10 +23,10 @@ function formatCurrency(amount: number, currency: string) {
 
 function StatusBadge({ status }: { status: OrderStatus }) {
   const map: Record<OrderStatus, { icon: React.ElementType; cls: string; label: string }> = {
-    paid:     { icon: CheckCircle2, cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200', label: 'Paid'     },
-    pending:  { icon: Clock,        cls: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',       label: 'Pending'  },
-    failed:   { icon: XCircle,      cls: 'bg-red-50 text-red-700 ring-1 ring-red-200',             label: 'Failed'   },
-    refunded: { icon: RotateCcw,    cls: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',      label: 'Refunded' },
+    paid: { icon: CheckCircle2, cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200', label: 'Paid' },
+    pending: { icon: Clock, cls: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200', label: 'Pending' },
+    failed: { icon: XCircle, cls: 'bg-red-50 text-red-700 ring-1 ring-red-200', label: 'Failed' },
+    refunded: { icon: RotateCcw, cls: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200', label: 'Refunded' },
   };
   const { icon: Icon, cls, label } = map[status] ?? map.pending;
   return (
@@ -42,9 +42,9 @@ function StatusBadge({ status }: { status: OrderStatus }) {
 export default function OrdersPage() {
   const { t } = useTranslation();
   const { user } = useAppSelector((s) => s.auth);
-  const [orders, setOrders]   = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     apiClient.get('/orders/me')
@@ -109,7 +109,7 @@ export default function OrdersPage() {
                 <p className="text-2xl font-bold text-slate-900">
                   {orders.filter((o) => o.status === 'paid').length} courses
                 </p>
-                <p className="text-xs text-slate-500">Unlocked</p>
+                <p className="text-xs text-slate-500">{t('orders', 'Unlocked')}</p>
               </div>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function OrdersPage() {
         <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-2xl">
           <ShoppingBag className="w-12 h-12 mx-auto text-slate-300 mb-4" />
           <p className="font-semibold text-slate-700">{t('orders', 'noOrders')}</p>
-          <p className="text-sm text-slate-400 mt-1">Explore courses and start learning!</p>
+          <p className="text-sm text-slate-400 mt-1">{t('orders', 'Explore_courses_and_start_learning')}</p>
           <Link href="/dashboard/courses"
             className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-500">
             Browse courses <ArrowRight className="w-4 h-4" />
@@ -140,7 +140,7 @@ export default function OrdersPage() {
       {orders.length > 0 && (
         <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="text-base font-semibold text-slate-900">All Orders</h2>
+            <h2 className="text-base font-semibold text-slate-900">{t('orders', 'allOrders')}</h2>
           </div>
           <ul className="divide-y divide-slate-100">
             {orders.map((order) => (

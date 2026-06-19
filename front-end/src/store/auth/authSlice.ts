@@ -30,13 +30,11 @@ export const loginUser = createAsyncThunk<AuthResponse, Record<string, string>, 
  }
 );
 
-export const registerUser = createAsyncThunk<AuthResponse, Record<string, string>, { rejectValue: ApiError }>(
+export const registerUser = createAsyncThunk<{ success: boolean; email: string }, Record<string, string>, { rejectValue: ApiError }>(
  'auth/registerUser',
  async (userData, { rejectWithValue }) => {
  try {
- const response = await apiClient.post<AuthResponse>('/auth/register', userData);
- localStorage.setItem('accessToken', response.data.accessToken);
- localStorage.setItem('refreshToken', response.data.refreshToken);
+ const response = await apiClient.post<{ success: boolean; email: string }>('/auth/register', userData);
  return response.data;
  } catch (err: any) {
  return rejectWithValue(err.response?.data || { error: 'Registration failed' });
@@ -108,8 +106,8 @@ const authSlice = createSlice({
  })
  .addCase(registerUser.fulfilled, (state, action) => {
  state.isLoading = false;
- state.isAuthenticated = true;
- state.user = action.payload.user;
+ state.isAuthenticated = false;
+ state.user = null;
  })
  .addCase(registerUser.rejected, (state, action) => {
  state.isLoading = false;

@@ -57,7 +57,7 @@ export default function CheckoutSuccessPage({
       .then(async ({ data: orders }) => {
         // Find a pending/paid order for this course
         const order = (orders as any[]).find(
-          (o) => o.course_id === parseInt(courseId, 10),
+          (o) => Number(o.course_id) === Number(courseId),
         );
         if (!order) throw new Error('Order not found');
 

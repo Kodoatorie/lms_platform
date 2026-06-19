@@ -19,31 +19,56 @@ export const dictionaries = {
       }
     },
     home: {
-      heroTitle: "Будущее обучения с",
-      heroSubtitle: "Автоматизация образования для компаний, учебных центров и школ в Алматы, Астане и по всему Казахстану.",
-      ctaStart: "Начать обучение",
-      ctaDemo: "Демо для бизнеса",
+      heroTitle: "Стань востребованным разработчиком с",
+      heroSubtitle: "Практическая платформа для изучения программирования. Пиши код, решай задачи с автопроверкой и создавай проекты, которые заметят работодатели.",
+      ctaStart: "Выбрать курс",
+      ctaDemo: "Связаться с куратором",
       stats: [
-        { value: "15,000+", label: "Студентов по РК" },
-        { value: "200+", label: "Курсов" },
-        { value: "98%", label: "Успешных завершений" },
-        { value: "KZT/USD", label: "Поддержка валют" }
+        { value: "10,000+", label: "Выпускников" },
+        { value: "50+", label: "IT-курсов" },
+        { value: "95%", label: "Трудоустройство" },
+        { value: "150,000+", label: "Решенных задач" }
       ],
-      benefitsTitle: "Почему выбирают нас",
+      benefitsTitle: "Как устроено обучение",
       benefits: [
-        { title: "Трёхязычный UI", desc: "Поддержка RU, KZ, EN из коробки." },
-        { title: "Платежи Stripe", desc: "Нативная интеграция и прием платежей." },
-        { title: "Хранилище MinIO", desc: "Безопасное хранение файлов и видео." },
-        { title: "PDF-сертификаты", desc: "Автоматическая генерация по завершению." },
-        { title: "Очереди BullMQ", desc: "Надежная фоновая обработка задач." },
-        { title: "Отказоустойчивость", desc: "Nginx для балансировки нагрузки." }
+        { title: "Интерактивная практика", desc: "Решай задачи по Python, JavaScript, Go прямо в браузере с мгновенным фидбеком." },
+        { title: "Командные проекты", desc: "Участвуй в реальной разработке, пиши код в команде и учись работать с Git." },
+        { title: "Ревью кода", desc: "Твой код проверяют опытные менторы из топовых IT-компаний Казахстана." },
+        { title: "Сертификаты в LinkedIn", desc: "Получи официальный цифровой сертификат, подтверждающий твои навыки." },
+        { title: "Портфолио на GitHub", desc: "Все твои курсовые работы превратятся в готовые репозитории на GitHub." },
+        { title: "Помощь в карьере", desc: "Готовим к собеседованиям, составляем резюме и рекомендуем лучшим компаниям." }
       ],
-      testimonialsTitle: "Отзывы клиентов из Казахстана",
+      testimonialsTitle: "Истории успеха наших студентов",
       testimonials: [
-        { text: "Отличная платформа, мы перевели весь наш центр в Астане на эту LMS за неделю.", author: "CEO EdTech-центра", location: "Астана" },
-        { text: "Удобный интерфейс и поддержка оплат в тенге. Мои ученики в восторге.", author: "Частный преподаватель", location: "Алматы" },
-        { text: "Техническая стабильность и авто-сертификаты экономят нам массу времени.", author: "Директор школы", location: "Шымкент" }
-      ]
+        { text: "Благодаря курсу по React устроился Junior-разработчиком в стартап в Алматы на третьем курсе университета.", author: "Адильбек Сериков", location: "Алматы" },
+        { text: "Автопроверка задач — это супер. Не нужно ждать преподавателя, сразу видишь ошибки в коде. Прошла курс по Python.", author: "Мария Волкова", location: "Астана" },
+        { text: "Очень сильная программа по алгоритмам. Помогла пройти технический отбор в крупную финтех-компанию.", author: "Бахтияр Нургалиев", location: "Шымкент" }
+      ],
+      coursesTitle: "Популярные направления обучения",
+      courses: [
+        { title: "Python-разработчик", level: "С нуля", duration: "6 месяцев", desc: "Освойте самый популярный язык для бэкенда, анализа данных и ИИ. Напишите свои первые веб-сервисы и ботов." },
+        { title: "Frontend-разработчик (React)", level: "С нуля", duration: "5 месяцев", desc: "Научитесь создавать интерактивные интерфейсы веб-приложений. Освойте JavaScript, TypeScript и React." },
+        { title: "Go-разработчик", level: "Продвинутый", duration: "4 месяца", desc: "Изучите язык разработки высоконагруженных систем от Google. Разберитесь в многопоточности и микросервисах." }
+      ],
+      howItWorksTitle: "Ваш путь к новой профессии в IT",
+      howItWorks: [
+        { step: "01", title: "Выбираете направление", desc: "Начните с бесплатных вводных уроков, чтобы понять, какой язык программирования вам ближе." },
+        { step: "02", title: "Пишете код с первого дня", desc: "Никакой скучной теории. Учитесь в интерактивном редакторе с автоматической проверкой тестов." },
+        { step: "03", title: "Проходите код-ревью", desc: "Ваш код проверяют практикующие разработчики, указывая на ошибки и помогая писать чище." },
+        { step: "04", title: "Получаете диплом и работу", desc: "Защищаете выпускной проект, оформляете портфолио на GitHub и проходите собеседования с нашими партнерами." }
+      ],
+      editorTitle: "Интерактивная среда обучения",
+      editorSubtitle: "Никаких сложных настроек. Пишите код, запускайте тесты и получайте мгновенный результат прямо в браузере.",
+      studentFaqTitle: "Часто задаваемые вопросы",
+      studentFaqs: [
+        { q: "Нужна ли математическая база для старта?", a: "Для большинства направлений разработки достаточно базовой школьной математики. Важнее логическое мышление и готовность много практиковаться." },
+        { q: "Сколько времени нужно уделять учебе?", a: "Мы рекомендуем заниматься от 10 до 15 часов в неделю. Вы можете учиться в своем темпе в любое удобное время." },
+        { q: "Помогаете ли вы с трудоустройством в Казахстане?", a: "Да! Мы помогаем составить резюме, подготовиться к техническим собеседованиям и рекомендуем наших лучших выпускников компаниям-партнерам в Алматы, Астане и других городах." },
+        { q: "Можно ли совмещать обучение с работой или вузом?", a: "Конечно. Все лекции записаны, а практические задания доступны 24/7. Вы сами планируете свой график обучения." }
+      ],
+      ctaTitle: "Готовы написать свой первый Hello World?",
+      ctaSubtitle: "Начните с бесплатных интерактивных уроков, решите свои первые задачи и сделайте шаг навстречу карьере веб-разработчика.",
+      ctaButton: "Начать обучение бесплатно"
     },
     pricing: {
       toggleMonthly: "Ежемесячно",
@@ -63,14 +88,53 @@ export const dictionaries = {
       ]
     },
     features: {
-      rolesTitle: "Интерфейсы для каждой роли",
-      roles: [
-        { id: "student", label: "Студент", features: ["Просмотр курсов", "Сдача тестов", "Получение сертификатов"] },
-        { id: "teacher", label: "Учитель", features: ["Создание уроков", "Проверка заданий", "Аналитика успеваемости"] },
-        { id: "admin", label: "Администратор", features: ["Управление пользователями", "Логи платежей Stripe", "Настройки платформы"] }
+      title: "Возможности для студентов",
+      subtitle: "Всё необходимое для эффективного изучения веб-разработки и быстрого старта карьеры в IT.",
+      items: [
+        {
+          id: "sandbox",
+          title: "Интерактивная песочница",
+          description: "Пишите код прямо в браузере на Python, JavaScript или Go. Никаких сложных установок ПО — учитесь с первого клика.",
+          details: ["Поддержка автодополнения кода", "Подсветка синтаксиса и ошибок", "Встроенный терминал для тестов"]
+        },
+        {
+          id: "autograder",
+          title: "Мгновенная автопроверка",
+          description: "Наш робот-тестировщик проверяет ваши решения за секунды и дает понятные подсказки, если что-то пошло не так.",
+          details: ["Запуск юнит-тестов в реальном времени", "Детализированные логи ошибок", "Персонализированные подсказки ИИ"]
+        },
+        {
+          id: "review",
+          title: "Код-ревью от менторов",
+          description: "Практикующие разработчики из топ-компаний проверяют ваши проекты и подсказывают, как писать чище.",
+          details: ["Построчные комментарии к коду", "Советы по архитектуре приложений", "Оценка соответствия Clean Code"]
+        },
+        {
+          id: "gamification",
+          title: "Геймификация и мотивация",
+          description: "Зарабатывайте опыт (XP), собирайте достижения и соревнуйтесь в лиге студентов, чтобы поддерживать регулярный темп обучения.",
+          details: ["Календарь непрерывных дней (Streak)", "Таблица лидеров по Казахстану", "Уникальные ачивки за сложные задачи"]
+        },
+        {
+          id: "github",
+          title: "Интеграция с GitHub",
+          description: "Свяжите свой аккаунт и автоматически отправляйте решенные задачи и курсовые проекты в личный репозиторий.",
+          details: ["Автоматический экспорт кода", "Синхронизация профиля с резюме", "Готовое портфолио для работодателей"]
+        },
+        {
+          id: "career",
+          title: "Карьерный кабинет",
+          description: "Следите за вакансиями партнеров в Алматы, Астане и Шымкенте. Откликайтесь прямо с платформы со своим цифровым резюме.",
+          details: ["Шаблоны резюме IT-специалиста", "Запись на тренировочные интервью", "Прямой доступ к рекрутерам партнеров"]
+        }
       ],
-      techTitle: "Технический стек",
-      techDesc: "Современная и отказоустойчивая архитектура."
+      interactiveTitle: "Попробуйте платформу в действии",
+      interactiveSubtitle: "Напишите простую программу ниже и посмотрите, как работает автопроверка.",
+      editorPlaceholder: "// Напишите функцию, которая возвращает сумму a и b\nfunction sum(a, b) {\n  return a + b;\n}",
+      editorRun: "Запустить тесты",
+      editorTesting: "Проверка...",
+      editorSuccess: "Все тесты успешно пройдены! 🚀 Отличная работа!",
+      editorFail: "Тест не пройден. Ожидалось: 5, получено: "
     },
     contacts: {
       officesTitle: "Наши офисы в Казахстане",
@@ -83,6 +147,27 @@ export const dictionaries = {
       formEmail: "Email",
       formMessage: "Сообщение",
       formSubmit: "Отправить заявку"
+    },
+    layout: {
+      nav: {
+        features: "Возможности",
+        pricing: "Тарифы",
+        contacts: "Контакты",
+        login: "Войти",
+        start: "Начать обучение"
+      },
+      footer: {
+        desc: "Современная LMS-платформа для бизнеса и образования в Казахстане. Обучайте сотрудников и студентов эффективно.",
+        offices: "Офисы",
+        company: "Компания",
+        features: "Возможности",
+        pricing: "Тарифы",
+        contacts: "Контакты",
+        legal: "Юридическая информация",
+        privacy: "Политика конфиденциальности",
+        terms: "Условия использования",
+        rights: "Все права защищены."
+      }
     }
   },
   kk: {
@@ -105,31 +190,56 @@ export const dictionaries = {
       }
     },
     home: {
-      heroTitle: "Оқытудың болашағы",
-      heroSubtitle: "Алматы, Астана және бүкіл Қазақстан бойынша компаниялар, оқу орталықтары мен мектептер үшін білім беруді автоматтандыру.",
-      ctaStart: "Оқуды бастау",
-      ctaDemo: "Бизнеске арналған демо",
+      heroTitle: "Танымал әзірлеуші бол",
+      heroSubtitle: "Бағдарламалауды үйренуге арналған практикалық платформа. Код жаз, автоматты түрде тексерілетін есептерді шеш және жұмыс берушілер байқайтын жобалар жаса.",
+      ctaStart: "Курсты таңдау",
+      ctaDemo: "Куратормен байланысу",
       stats: [
-        { value: "15,000+", label: "ҚР бойынша студенттер" },
-        { value: "200+", label: "Курстар" },
-        { value: "98%", label: "Сәтті аяқтау" },
-        { value: "KZT/USD", label: "Валюталарды қолдау" }
+        { value: "10,000+", label: "Түлектер" },
+        { value: "50+", label: "IT-курстар" },
+        { value: "95%", label: "Жұмысқа орналасу" },
+        { value: "150,000+", label: "Шешілген есептер" }
       ],
-      benefitsTitle: "Неліктен бізді таңдайды",
+      benefitsTitle: "Оқу қалай ұйымдастырылған",
       benefits: [
-        { title: "Үш тілді UI", desc: "Қораптан RU, KZ, EN қолдауы." },
-        { title: "Stripe төлемдері", desc: "Нативті интеграция және төлемдерді қабылдау." },
-        { title: "MinIO қоймасы", desc: "Файлдар мен видеоларды қауіпсіз сақтау." },
-        { title: "PDF-сертификаттар", desc: "Аяқтаған кезде автоматты түрде жасау." },
-        { title: "BullMQ кезектері", desc: "Тапсырмаларды сенімді өңдеу." },
-        { title: "Ақауларға төзімділік", desc: "Жүктемені теңестіруге арналған Nginx." }
+        { title: "Интерактивті практика", desc: "Python, JavaScript, Go есептерін браузерде тікелей шешіп, лезде жауап ал." },
+        { title: "Командалық жобалар", desc: "Нақты әзірлеуге қатыс, командада код жаз және Git-пен жұмыс істеуді үйрен." },
+        { title: "Кодты тексеру (Review)", desc: "Сенің кодыңызды Қазақстанның үздік IT-компанияларының тәжірибелі менторлары тексереді." },
+        { title: "LinkedIn сертификаттары", desc: "Дағдыларыңызды растайтын ресми цифрлық сертификат ал." },
+        { title: "GitHub-тағы портфолио", desc: "Барлық курстық жұмыстарың GitHub-тағы дайын репозиторийлерге айналады." },
+        { title: "Мансапқа көмек", desc: "Сұхбаттарға дайындаймыз, түйіндеме жасаймыз және үздік компанияларға ұсынамыз." }
       ],
-      testimonialsTitle: "Қазақстандағы клиенттердің пікірлері",
+      testimonialsTitle: "Студенттеріміздің табыс тарихы",
       testimonials: [
-        { text: "Керемет платформа, біз Астанадағы барлық орталығымызды осы LMS-ке бір апта ішінде ауыстырдық.", author: "EdTech орталығының бас директоры", location: "Астана" },
-        { text: "Қолайлы интерфейс және теңгемен төлем жасауды қолдау. Менің оқушыларым риза.", author: "Жеке оқытушы", location: "Алматы" },
-        { text: "Техникалық тұрақтылық және авто-сертификаттар біздің уақытымызды үнемдейді.", author: "Мектеп директоры", location: "Шымкент" }
-      ]
+        { text: "React курсының арқасында университеттің үшінші курсында Алматыдағы стартапқа Junior әзірлеуші болып жұмысқа тұрдым.", author: "Әділбек Серіков", location: "Алматы" },
+        { text: "Есептерді автоматты тексеру — тамаша. Мұғалімді күтудің қажеті жоқ, қателерді бірден көресің.", author: "Мария Волкова", location: "Астана" },
+        { text: "Алгоритмдер бойынша өте күшті бағдарлама. Ірі финтех компаниясындағы техникалық іріктеуден өтуге көмектесті.", author: "Бақтияр Нұрғалиев", location: "Шымкент" }
+      ],
+      coursesTitle: "Танымал оқу бағыттары",
+      courses: [
+        { title: "Python әзірлеушісі", level: "Нөлден бастап", duration: "6 ай", desc: "Бэкенд, деректерді талдау және ЖИ үшін ең танымал тілді меңгеріңіз. Алғашқы веб-қызметтеріңіз бен боттарыңызды жазыңыз." },
+        { title: "Frontend әзірлеушісі (React)", level: "Нөлден бастап", duration: "5 ай", desc: "Веб-қосымшалардың интерактивті интерфейстерін жасауды үйреніңіз. JavaScript, TypeScript және React меңгеріңіз." },
+        { title: "Go әзірлеушісі", level: "Жетілдірілген", duration: "4 ай", desc: "Google-дан жоғары жүктемелі жүйелерді әзірлеу тілін үйреніңіз. Көп ағындылық пен микроқызметтерді түсініңіз." }
+      ],
+      howItWorksTitle: "IT-дегі жаңа мамандыққа барар жолыңыз",
+      howItWorks: [
+        { step: "01", title: "Бағытты таңдайсыз", desc: "Қай бағдарламалау тілі сізге жақын екенін түсіну үшін тегін кіріспе сабақтардан бастаңыз." },
+        { step: "02", title: "Бірінші күннен бастап код жазасыз", desc: "Зеріктіретін теория жоқ. Автоматты тест тексеруі бар интерактивті редакторда оқыңыз." },
+        { step: "03", title: "Кодты тексеруден өтесіз", desc: "Сіздің кодыңызды жұмыс істеп жүрген әзірлеушілер тексеріп, қателерді көрсетіп, таза жазуға көмектеседі." },
+        { step: "04", title: "Диплом мен жұмыс аласыз", desc: "Бітіру жобасын қорғап, GitHub-та портфолио жасап, біздің серіктестермен сұхбаттасудан өтесіз." }
+      ],
+      editorTitle: "Интерактивті оқу ортасы",
+      editorSubtitle: "Күрделі параметрлер қажет емес. Код жазыңыз, тесттерді іске қосыңыз және нәтижені браузерде тікелей алыңыз.",
+      studentFaqTitle: "Жиі қойылатын сұрақтар",
+      studentFaqs: [
+        { q: "Бастау үшін математикалық база қажет пе?", a: "Әзірлеудің көптеген бағыттары үшін негізгі мектеп математикасы жеткілікті. Логикалық ойлау және көп тәжірибе жасауға дайын болу маңыздырақ." },
+        { q: "Оқуға қанша уақыт бөлу керек?", a: "Аптасына 10-нан 15 сағатқа дейін уақыт бөлуді ұсынамыз. Кез келген ыңғайлы уақытта өз қарқыныңызбен оқи аласыз." },
+        { q: "Қазақстанда жұмысқа орналасуға көмектесесіз бе?", a: "Иә! Түйіндеме жасауға, техникалық сұхбаттарға дайындалуға көмектесеміз және үздік түлектерімізді Алматы, Астана және басқа қалалардағы серіктес компанияларға ұсынамыз." },
+        { q: "Оқуды жұмыспен немесе жоғары оқу орнымен ұштастыруға бола ма?", a: "Әрине. Барлық дәрістер жазылған, ал практикалық тапсырмалар 24/7 қолжетімді. Оқу кестесін өзіңіз жоспарлайсыз." }
+      ],
+      ctaTitle: "Алғашқы Hello World-ты жазуға дайынсыз ба?",
+      ctaSubtitle: "Тегін интерактивті сабақтардан бастаңыз, алғашқы есептеріңізді шешіп, веб-әзірлеуші мансабына алғашқы қадам жасаңыз.",
+      ctaButton: "Тегін оқуды бастау"
     },
     pricing: {
       toggleMonthly: "Ай сайын",
@@ -149,14 +259,53 @@ export const dictionaries = {
       ]
     },
     features: {
-      rolesTitle: "Әр рөлге арналған интерфейстер",
-      roles: [
-        { id: "student", label: "Студент", features: ["Курстарды көру", "Тесттер тапсыру", "Сертификаттар алу"] },
-        { id: "teacher", label: "Мұғалім", features: ["Сабақтар жасау", "Тапсырмаларды тексеру", "Үлгерім аналитикасы"] },
-        { id: "admin", label: "Әкімші", features: ["Пайдаланушыларды басқару", "Stripe төлемдер журналы", "Платформа параметрлері"] }
+      title: "Студенттерге арналған мүмкіндіктер",
+      subtitle: "Веб-әзірлеуді тиімді үйрену және IT-де мансапты жылдам бастау үшін қажет нәрсенің бәрі.",
+      items: [
+        {
+          id: "sandbox",
+          title: "Интерактивті песочница",
+          description: "Python, JavaScript немесе Go тілдерінде тікелей браузерде код жазыңыз. Күрделі бағдарламалық жасақтаманы орнатудың қажеті жоқ — бірінші басудан бастап үйреніңіз.",
+          details: ["Кодты автоматты түрде аяқтауды қолдау", "Синтаксис пен қателерді бөлектеу", "Тесттерге арналған кірістірілген терминал"]
+        },
+        {
+          id: "autograder",
+          title: "Лездік автоматты тексеру",
+          description: "Біздің робот-тестілеуші шешімдеріңізді бірнеше секундта тексереді және бірдеңе дұрыс болмаса, түсінікті кеңестер береді.",
+          details: ["Нақты уақыттағы юнит-тесттерді іске қосу", "Қателердің егжей-тегжейлі журналдары", "ЖИ-дің жекелендірілген кеңестері"]
+        },
+        {
+          id: "review",
+          title: "Менторлардан кодты тексеру",
+          description: "Үздік компаниялардың тәжірибелі әзірлеушілері жобаларыңызды тексереді және кодты қалай таза жазу керектігін айтады.",
+          details: ["Кодқа жолма-жол түсініктемелер", "Қосымша архитектурасы бойынша кеңестер", "Clean Code стандарттарына сәйкестігін бағалау"]
+        },
+        {
+          id: "gamification",
+          title: "Геймификация және мотивация",
+          description: "Тұрақты оқу қарқынын сақтау үшін тәжірибе (XP) жинаңыз, жетістіктерді жинаңыз және студенттер лигасында бақ сынасыңыз.",
+          details: ["Үздіксіз күндер күнтізбесі (Streak)", "Қазақстан бойынша көшбасшылар тақтасы", "Күрделі есептер үшін бірегей ачивкалар"]
+        },
+        {
+          id: "github",
+          title: "GitHub-пен интеграция",
+          description: "Тіркелгіңізді байланыстырыңыз және шешілген есептер мен курстық жобаларды жеке репозиторийге автоматты түрде жіберіңіз.",
+          details: ["Кодты автоматты түрде экспорттау", "Профильді түйіндемемен синхрондау", "Жұмыс берушілер үшін дайын портфолио"]
+        },
+        {
+          id: "career",
+          title: "Мансап кабинеті",
+          description: "Алматы, Астана және Шымкенттегі серіктестердің бос жұмыс орындарын қадағалаңыз. Цифрлық түйіндемеңізбен тікелей платформадан жауап беріңіз.",
+          details: ["IT-маманның түйіндеме үлгілері", "Жаттығу сұхбаттарына жазылу", "Серіктестердің рекрутерлеріне тікелей қол жеткізу"]
+        }
       ],
-      techTitle: "Техникалық стек",
-      techDesc: "Заманауи және ақауларға төзімді архитектура."
+      interactiveTitle: "Платформаны іс жүзінде қолданып көріңіз",
+      interactiveSubtitle: "Төменде қарапайым бағдарлама жазып, автоматты тексерудің қалай жұмыс істейтінін көріңіз.",
+      editorPlaceholder: "// a және b қосындысын қайтаратын функцияны жазыңыз\nfunction sum(a, b) {\n  return a + b;\n}",
+      editorRun: "Тесттерді іске қосу",
+      editorTesting: "Тексерілуде...",
+      editorSuccess: "Барлық тесттер сәтті өтті! 🚀 Керемет жұмыс!",
+      editorFail: "Тест сәтсіз аяқталды. Күтілді: 5, алынды: "
     },
     contacts: {
       officesTitle: "Қазақстандағы біздің кеңселер",
@@ -169,6 +318,27 @@ export const dictionaries = {
       formEmail: "Email",
       formMessage: "Хабарлама",
       formSubmit: "Өтінім жіберу"
+    },
+    layout: {
+      nav: {
+        features: "Мүмкіндіктер",
+        pricing: "Тарифтер",
+        contacts: "Контактілер",
+        login: "Кіру",
+        start: "Оқуды бастау"
+      },
+      footer: {
+        desc: "Қазақстандағы бизнес пен білім беруге арналған заманауи LMS платформасы. Қызметкерлер мен студенттерді тиімді оқытыңыз.",
+        offices: "Кеңселер",
+        company: "Компания",
+        features: "Мүмкіндіктер",
+        pricing: "Тарифтер",
+        contacts: "Контактілер",
+        legal: "Құқықтық ақпарат",
+        privacy: "Құпиялылық саясаты",
+        terms: "Пайдалану шарттары",
+        rights: "Барлық құқықтар қорғалған."
+      }
     }
   },
   en: {
@@ -191,31 +361,56 @@ export const dictionaries = {
       }
     },
     home: {
-      heroTitle: "The future of learning with",
-      heroSubtitle: "Educational automation for companies, learning centers, and schools in Almaty, Astana, and across Kazakhstan.",
-      ctaStart: "Start Learning",
-      ctaDemo: "Demo for Business",
+      heroTitle: "Become a professional developer with",
+      heroSubtitle: "A hands-on coding platform. Write code, solve auto-graded tasks, and build real-world projects that recruiters will notice.",
+      ctaStart: "Explore Courses",
+      ctaDemo: "Talk to Mentor",
       stats: [
-        { value: "15,000+", label: "Students in KZ" },
-        { value: "200+", label: "Courses" },
-        { value: "98%", label: "Completion Rate" },
-        { value: "KZT/USD", label: "Currency Support" }
+        { value: "10,000+", label: "Graduates" },
+        { value: "50+", label: "IT Courses" },
+        { value: "95%", label: "Employment Rate" },
+        { value: "150,000+", label: "Tasks Solved" }
       ],
-      benefitsTitle: "Why Choose Us",
+      benefitsTitle: "How Our Program Works",
       benefits: [
-        { title: "Tri-lingual UI", desc: "Out of the box support for RU, KZ, EN." },
-        { title: "Stripe Payments", desc: "Native integration and payment processing." },
-        { title: "MinIO Storage", desc: "Secure storage for files and videos." },
-        { title: "PDF Certificates", desc: "Auto-generation upon completion." },
-        { title: "BullMQ Queues", desc: "Reliable background task processing." },
-        { title: "Fault Tolerance", desc: "Nginx for load balancing." }
+        { title: "Interactive Coding", desc: "Solve Python, JavaScript, and Go tasks directly in the browser with instant code feedback." },
+        { title: "Team Projects", desc: "Collaborate on real-world codebases, write clean code, and master Git version control." },
+        { title: "Code Review", desc: "Get personalized line-by-line feedback from experienced mentors in top IT companies." },
+        { title: "Shareable Certificates", desc: "Earn a verified digital certificate to highlight your skills on LinkedIn." },
+        { title: "GitHub Portfolio", desc: "Turn your assignments and capstone projects into polished GitHub repositories." },
+        { title: "Career Support", desc: "Get resume assistance, mock interviews, and direct recommendations to top employers." }
       ],
-      testimonialsTitle: "Feedback from Clients in Kazakhstan",
+      testimonialsTitle: "Student Success Stories",
       testimonials: [
-        { text: "Great platform, we moved our entire center in Astana to this LMS in a week.", author: "CEO of EdTech Center", location: "Astana" },
-        { text: "User-friendly interface and support for payments in tenge. My students are thrilled.", author: "Private Tutor", location: "Almaty" },
-        { text: "Technical stability and auto-certificates save us a ton of time.", author: "School Principal", location: "Shymkent" }
-      ]
+        { text: "Thanks to the React course, I got hired as a Junior Developer at an Almaty startup during my junior year of university.", author: "Adilbek Serikov", location: "Almaty" },
+        { text: "The auto-grader is awesome. You don't have to wait for the teacher and immediately see syntax or logical errors.", author: "Maria Volkova", location: "Astana" },
+        { text: "Extremely rigorous algorithms module. It helped me pass the technical interview at a major fintech company.", author: "Bakhtiyar Nurgaliyev", location: "Shymkent" }
+      ],
+      coursesTitle: "Popular Learning Tracks",
+      courses: [
+        { title: "Python Developer", level: "Beginner", duration: "6 months", desc: "Master the most popular language for backend, data science, and AI. Build your first web services and bots." },
+        { title: "Frontend Developer (React)", level: "Beginner", duration: "5 months", desc: "Learn to build interactive web application interfaces. Master JavaScript, TypeScript, and React." },
+        { title: "Go Developer", level: "Advanced", duration: "4 months", desc: "Study the high-performance system programming language created by Google. Master concurrency and microservices." }
+      ],
+      howItWorksTitle: "Your Journey to a New IT Career",
+      howItWorks: [
+        { step: "01", title: "Choose Your Track", desc: "Start with free introductory lessons to discover which programming language suits you best." },
+        { step: "02", title: "Code from Day One", desc: "No boring theory. Write code and solve real tests inside our interactive browser editor." },
+        { step: "03", title: "Get Mentor Feedback", desc: "Active industry developers will review your code line-by-line to help you write clean production code." },
+        { step: "04", title: "Graduate & Get Hired", desc: "Build capstone projects, compile a strong GitHub portfolio, and get direct referrals to our hiring partners." }
+      ],
+      editorTitle: "Interactive Learning Environment",
+      editorSubtitle: "No complex setup needed. Write code, execute tests, and view output instantly inside your web browser.",
+      studentFaqTitle: "Frequently Asked Questions",
+      studentFaqs: [
+        { q: "Do I need a strong math background to start?", a: "Basic school-level math is more than enough for most software development tracks. Logical thinking and commitment to practice are far more important." },
+        { q: "How much time should I dedicate to study?", a: "We recommend spending about 10 to 15 hours per week. You can study completely at your own pace at any time." },
+        { q: "Do you offer job placement support in Kazakhstan?", a: "Yes! We help compile your resume, conduct mock technical interviews, and directly recommend our top graduates to partner companies in Almaty, Astana, and other cities." },
+        { q: "Can I combine this with work or university?", a: "Absolutely. All lectures are pre-recorded, and coding assignments are available 24/7. You plan your own study schedule." }
+      ],
+      ctaTitle: "Ready to write your first Hello World?",
+      ctaSubtitle: "Start with free interactive lessons, solve your first coding tasks, and take your first step towards a software engineering career.",
+      ctaButton: "Start Learning for Free"
     },
     pricing: {
       toggleMonthly: "Monthly",
@@ -235,14 +430,53 @@ export const dictionaries = {
       ]
     },
     features: {
-      rolesTitle: "Interfaces for Every Role",
-      roles: [
-        { id: "student", label: "Student", features: ["View courses", "Take tests", "Get certificates"] },
-        { id: "teacher", label: "Teacher", features: ["Create lessons", "Grade assignments", "Performance analytics"] },
-        { id: "admin", label: "Admin", features: ["Manage users", "Stripe payment logs", "Platform settings"] }
+      title: "Features for Students",
+      subtitle: "Everything you need to effectively learn web development and launch your career in IT.",
+      items: [
+        {
+          id: "sandbox",
+          title: "Interactive Sandbox",
+          description: "Write code directly in your browser using Python, JavaScript, or Go. No complex setups—start learning in one click.",
+          details: ["Autocomplete support", "Syntax & error highlighting", "Built-in testing terminal"]
+        },
+        {
+          id: "autograder",
+          title: "Instant Autograder",
+          description: "Our automated system checks your code in seconds and provides helpful tips if something isn't working.",
+          details: ["Real-time unit testing", "Detailed error stack traces", "AI-powered custom hints"]
+        },
+        {
+          id: "review",
+          title: "Mentor Code Reviews",
+          description: "Active developers from top tech companies review your code to teach you best practices and clean code guidelines.",
+          details: ["Line-by-line code feedback", "Application architecture tips", "Clean Code standards analysis"]
+        },
+        {
+          id: "gamification",
+          title: "Gamification & Motivation",
+          description: "Earn XP, collect achievements, and compete in the student leaderboard to stay motivated and consistent.",
+          details: ["Daily study streaks", "Kazakhstan-wide leaderboards", "Special badges for complex tasks"]
+        },
+        {
+          id: "github",
+          title: "GitHub Integration",
+          description: "Connect your GitHub account to automatically sync your completed projects and build a professional portfolio.",
+          details: ["Automatic code exporting", "Profile-to-resume sync", "Employer-ready portfolio"]
+        },
+        {
+          id: "career",
+          title: "Career Hub",
+          description: "Browse curated job openings in Almaty, Astana, and Shymkent. Apply directly from the platform with your student profile.",
+          details: ["IT resume templates", "Mock technical interviews", "Direct access to hiring partners"]
+        }
       ],
-      techTitle: "Tech Stack",
-      techDesc: "Modern and fault-tolerant architecture."
+      interactiveTitle: "Try the Platform Live",
+      interactiveSubtitle: "Write a simple function below and see how the automated testing works.",
+      editorPlaceholder: "// Write a function that returns the sum of a and b\nfunction sum(a, b) {\n  return a + b;\n}",
+      editorRun: "Run Tests",
+      editorTesting: "Testing...",
+      editorSuccess: "All tests passed successfully! 🚀 Great job!",
+      editorFail: "Test failed. Expected: 5, got: "
     },
     contacts: {
       officesTitle: "Our Offices in Kazakhstan",
@@ -255,6 +489,27 @@ export const dictionaries = {
       formEmail: "Email",
       formMessage: "Message",
       formSubmit: "Submit Request"
+    },
+    layout: {
+      nav: {
+        features: "Features",
+        pricing: "Pricing",
+        contacts: "Contacts",
+        login: "Sign In",
+        start: "Start Learning"
+      },
+      footer: {
+        desc: "A modern LMS platform for business and education in Kazakhstan. Train employees and students effectively.",
+        offices: "Offices",
+        company: "Company",
+        features: "Features",
+        pricing: "Pricing",
+        contacts: "Contacts",
+        legal: "Legal",
+        privacy: "Privacy Policy",
+        terms: "Terms of Service",
+        rights: "All rights reserved."
+      }
     }
   }
 } as const;
@@ -262,5 +517,6 @@ export const dictionaries = {
 export type Locale = keyof typeof dictionaries;
 
 export function getDictionary(locale: string) {
-  return dictionaries[locale as Locale] ?? dictionaries.ru;
+  const norm = locale === 'kz' ? 'kk' : locale;
+  return dictionaries[norm as 'ru' | 'kk' | 'en'] ?? dictionaries.ru;
 }

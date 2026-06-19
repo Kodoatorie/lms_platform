@@ -1,14 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getDictionary } from '../../../i18n/dictionaries';
+import { getLocale } from '../../../lib/i18n/useTranslation';
 import { Check, ChevronDown } from 'lucide-react';
 
 export default function PricingClient({ locale }: { locale: string }) {
+  const [activeLocale, setActiveLocale] = useState(locale);
   const [isYearly, setIsYearly] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const t = getDictionary(locale);
+  useEffect(() => {
+    const currentLocale = getLocale();
+    if (currentLocale && currentLocale !== activeLocale) {
+      setActiveLocale(currentLocale);
+    }
+  }, []);
+
+  const normalizedLocale = activeLocale === 'kz' ? 'kk' : activeLocale;
+  const t = getDictionary(normalizedLocale);
+
+  const formatPrice = (priceStr: string) => {
+    const clean = priceStr.replace(/\s/g, '');
+    const num = parseInt(clean, 10);
+    if (isNaN(num)) return priceStr;
+    const finalPrice = isYearly ? num * 0.8 : num;
+    return finalPrice.toLocaleString('ru-RU') + ' ₸';
+  };
+
+  const getPriceSuffix = (priceStr: string) => {
+    const clean = priceStr.replace(/\s/g, '');
+    const num = parseInt(clean, 10);
+    if (isNaN(num)) return '';
+    
+    if (isYearly) {
+      if (activeLocale === 'en') return '/mo, billed annually';
+      if (activeLocale === 'kk' || activeLocale === 'kz') return '/ай, жыл сайын төленеді';
+      return '/мес, при оплате за год';
+    } else {
+      if (activeLocale === 'en') return '/mo';
+      if (activeLocale === 'kk' || activeLocale === 'kz') return '/ай';
+      return '/мес';
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-start bg-slate-50 relative overflow-hidden py-24">
@@ -70,12 +104,21 @@ export default function PricingClient({ locale }: { locale: string }) {
                 </div>
               )}
               <h3 className="text-xl font-semibold text-slate-800 mb-2">{plan.name}</h3>
-              <div className="mb-6 flex items-baseline gap-2">
-                <span className="text-4xl font-extrabold text-slate-900">
-                  {plan.price === 'Индивидуально' || plan.price === 'Custom' || plan.price === 'Жеке' ? plan.price : `${plan.price} ₸`}
-                </span>
-                {(plan.price !== 'Индивидуально' && plan.price !== 'Custom' && plan.price !== 'Жеке') && (
-                  <span className="text-slate-500">/мес</span>
+              <div className="mb-6 flex flex-col items-start gap-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-extrabold text-slate-900">
+                    {formatPrice(plan.price)}
+                  </span>
+                  {!['Индивидуально', 'Custom', 'Жеке'].includes(plan.price) && (
+                    <span className="text-slate-500 text-sm">
+                      {getPriceSuffix(plan.price).split(',')[0]}
+                    </span>
+                  )}
+                </div>
+                {isYearly && !['Индивидуально', 'Custom', 'Жеке'].includes(plan.price) && (
+                  <span className="text-xs text-indigo-600 font-semibold animate-fade-in">
+                    {getPriceSuffix(plan.price).includes(',') ? getPriceSuffix(plan.price).split(',')[1].trim() : ''}
+                  </span>
                 )}
               </div>
               <ul className="space-y-4 mb-8">

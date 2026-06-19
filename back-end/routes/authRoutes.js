@@ -15,6 +15,9 @@ export const createAuthRouter = (authController) => {
     router.post('/login',    authLimiter, validateLogin,    authController.login);
     router.post('/logout',   authLimiter, authController.logout);
     router.post('/refresh',  authLimiter, validateRefresh,  authController.refresh);
+    router.post('/forgot-password', authLimiter, authController.forgotPassword);
+    router.post('/reset-password',  authLimiter, authController.resetPassword);
+    router.post('/verify-email',    authLimiter, authController.verifyEmail);
     router.get('/me',        authMiddleware, authController.me);
 
     return router;

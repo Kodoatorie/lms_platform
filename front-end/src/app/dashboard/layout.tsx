@@ -156,6 +156,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.push('/login');
     } else if (!user) {
       dispatch(fetchCurrentUser());
+    } else if (user && user.email_verified === false) {
+      router.push(`/verify-email?email=${encodeURIComponent(user.email)}`);
     }
   }, [user, dispatch, router]);
 
