@@ -6,6 +6,7 @@ import { UserModel } from './models/userModel.js';
 import { CourseModel } from './models/courseModel.js';
 import { ModuleModel } from './models/moduleModel.js';
 import { LessonModel } from './models/lessonModel.js';
+import { TeacherProfileModel } from './models/teacherProfileModel.js';
 
 dotenv.config();
 
@@ -20,29 +21,31 @@ async function seed() {
         const courseModel = new CourseModel(pool);
         const moduleModel = new ModuleModel(pool);
         const lessonModel = new LessonModel(pool);
+        const teacherProfileModel = new TeacherProfileModel(pool);
 
         // Find or create a teacher
         let teacher = await userModel.findByEmail('teacher@example.com');
         if (!teacher) {
             const passwordHash = await bcrypt.hash('password123', 10);
-            teacher = await userModel.create({
-                email: 'teacher@example.com',
+            teacher = await userModel.create(
+                'teacher@example.com',
                 passwordHash,
-                fullName: 'John Doe (Teacher)',
-                role: 'teacher'
-            });
+                'teacher'
+            );
+            await teacherProfileModel.create(teacher.id, 'John Doe (Teacher)');
             console.log('✅ Created example teacher: teacher@example.com / password123');
         } else {
             console.log('✅ Found existing teacher:', teacher.email);
         }
 
         // Create Course 1
-        const course1 = await courseModel.create({
+        let course1 = await courseModel.create({
             title: 'Fullstack Web Development Bootcamp',
             description: 'Learn to build fullstack web applications using React, Node.js, and PostgreSQL.',
             teacherId: teacher.id
         });
-        console.log(`✅ Created Course: ${course1.title}`);
+        course1 = await courseModel.update(course1.id, { is_published: true, price: 99.00 });
+        console.log(`✅ Created Course: ${course1.title} (Published)`);
 
         // Course 1 - Module 1
         const c1m1 = await moduleModel.create({ courseId: course1.id, title: 'Frontend Basics', orderIndex: 1 });
@@ -79,12 +82,13 @@ async function seed() {
         });
 
         // Create Course 2
-        const course2 = await courseModel.create({
+        let course2 = await courseModel.create({
             title: 'Introduction to Data Science',
             description: 'A beginner-friendly guide to data analysis and visualization using Python.',
             teacherId: teacher.id
         });
-        console.log(`✅ Created Course: ${course2.title}`);
+        course2 = await courseModel.update(course2.id, { is_published: true, price: 149.00 });
+        console.log(`✅ Created Course: ${course2.title} (Published)`);
 
         // Course 2 - Module 1
         const c2m1 = await moduleModel.create({ courseId: course2.id, title: 'Python Basics', orderIndex: 1 });

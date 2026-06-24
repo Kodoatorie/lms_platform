@@ -258,7 +258,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:relative top-0 left-0 h-full md:h-auto
+        fixed md:sticky top-0 left-0 h-full md:h-screen
         w-64 bg-white border-r border-slate-200 flex-shrink-0
         flex flex-col z-30 transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
