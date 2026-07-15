@@ -25,35 +25,39 @@ export default function Navbar() {
   const t = getDictionary(normalizedLocale);
 
   const navLinks = [
+    { href: `/`, label: t.layout.nav.home, active: pathname === '/' },
     { href: `/features`, label: t.layout.nav.features, active: pathname === '/features' },
     { href: `/pricing`, label: t.layout.nav.pricing, active: pathname === '/pricing' },
     { href: `/contacts`, label: t.layout.nav.contacts, active: pathname === '/contacts' },
   ];
 
   return (
-    <nav className="top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-md border-b border-slate-200/60 transition-all duration-300">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl">
+      <header className={`bg-white/70 backdrop-blur-lg border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.04)] transition-all duration-300 ${
+        isOpen ? 'rounded-[2rem] px-6 py-4' : 'rounded-full px-6 py-2.5'
+      }`}>
+        <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-md shadow-indigo-600/20 group-hover:scale-105 transition-transform duration-300">
-                <GraduationCap className="w-5 h-5" />
+              <div className="p-1.5 bg-indigo-600 rounded-full text-white shadow-md shadow-indigo-600/10 group-hover:scale-105 transition-transform duration-300">
+                <GraduationCap className="w-4 h-4" />
               </div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 font-display">
+              <span className="text-base font-bold text-slate-800 tracking-tight">
                 {APP_NAME}
               </span>
             </Link>
           </div>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-indigo-600 ${link.active ? 'text-indigo-600 font-semibold' : 'text-slate-600'
-                  }`}
+                className={`text-sm font-medium transition-colors hover:text-indigo-600 ${
+                  link.active ? 'text-indigo-600 font-semibold' : 'text-slate-600'
+                }`}
               >
                 {link.label}
               </Link>
@@ -65,15 +69,9 @@ export default function Navbar() {
             <LanguageSwitcher />
             <Link
               href="/login"
-              className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors px-4 py-2"
+              className="bg-[#111827] hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-full transition-all shadow-sm hover:shadow-md"
             >
               {t.layout.nav.login}
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex h-10 items-center justify-center rounded-full bg-indigo-600 px-5 text-sm font-medium text-white shadow-md shadow-indigo-600/10 transition-all duration-300 hover:bg-indigo-700 hover:-translate-y-0.5"
-            >
-              {t.layout.nav.start}
             </Link>
           </div>
 
@@ -82,55 +80,46 @@ export default function Navbar() {
             <LanguageSwitcher />
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+              className="p-2 rounded-full text-slate-600 hover:bg-slate-100/50 transition-colors"
               aria-label="Toggle menu"
             >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Menu Drawer */}
-      <div
-        className={`md:hidden absolute top-16 left-0 right-0 bg-white border-b border-slate-200 shadow-xl transition-all duration-300 ease-in-out origin-top ${isOpen ? 'opacity-100 translate-y-0 scale-y-100 visible' : 'opacity-0 -translate-y-4 scale-y-95 invisible'
-          }`}
-      >
-        <div className="px-4 pt-4 pb-6 space-y-4">
-          <div className="flex flex-col gap-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className={`px-3 py-2.5 rounded-xl text-base font-medium transition-all ${link.active
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+        {/* Mobile Menu Drawer */}
+        {isOpen && (
+          <div className="md:hidden mt-4 pt-4 border-t border-slate-200/50 space-y-4 animate-fade-in">
+            <div className="flex flex-col gap-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsOpen(false)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    link.active
+                      ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
 
-          <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
-            <Link
-              href="/login"
-              onClick={() => setIsOpen(false)}
-              className="flex justify-center items-center h-12 w-full rounded-xl border border-slate-200 text-base font-medium text-slate-700 hover:bg-slate-50 transition-all"
-            >
-              {t.layout.nav.login}
-            </Link>
-            <Link
-              href="/login"
-              onClick={() => setIsOpen(false)}
-              className="flex justify-center items-center h-12 w-full rounded-xl bg-indigo-600 text-base font-medium text-white shadow-lg shadow-indigo-600/10 hover:bg-indigo-700 transition-all"
-            >
-              {t.layout.nav.start}
-            </Link>
+            <div className="pt-4 border-t border-slate-200/50 flex flex-col gap-2">
+              <Link
+                href="/login"
+                onClick={() => setIsOpen(false)}
+                className="flex justify-center items-center h-10 w-full rounded-full bg-[#111827] hover:bg-slate-800 text-xs font-semibold text-white shadow-md transition-all"
+              >
+                {t.layout.nav.login}
+              </Link>
+            </div>
           </div>
-        </div>
-      </div>
-    </nav>
+        )}
+      </header>
+    </div>
   );
 }

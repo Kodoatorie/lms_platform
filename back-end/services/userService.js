@@ -16,14 +16,23 @@ export class UserService {
     }
 
     async updateProfile(userId, updates) {
+        // Map snake_case fields from frontend/API to camelCase expected by the models
+        const mappedUpdates = {
+            fullName:    updates.full_name,
+            bio:         updates.bio,
+            avatarUrl:   updates.avatar_url,
+            metadata:    updates.metadata,
+            phoneNumber: updates.phone_number,
+        };
+
         let profile = await this.studentProfileModel.findByUserId(userId);
         if (profile) {
-            return await this.studentProfileModel.update(profile.id, updates);
+            return await this.studentProfileModel.update(userId, mappedUpdates);
         }
 
         profile = await this.teacherProfileModel.findByUserId(userId);
         if (profile) {
-            return await this.teacherProfileModel.update(profile.id, updates);
+            return await this.teacherProfileModel.update(userId, mappedUpdates);
         }
 
         throw new Error('Profile not found');

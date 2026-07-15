@@ -95,6 +95,18 @@ export class OrderController {
             // Retrieve live status from Stripe
             const session = await this.stripeService.retrieveSession(order.provider_order_id);
 
+            // Sync payment status as a fallback if the webhook has not executed yet
+            if (session.payment_status === 'paid' && order.status !== 'paid') {
+                await this.orderService.handlePaymentSuccess(session.id, {
+                    source:             'checkout_session_sync',
+                    payment_intent:     session.payment_intent,
+                    customer_email:     session.customer_email,
+                    amount_total:       session.amount_total,
+                    currency:           session.currency,
+                });
+                order.status = 'paid';
+            }
+
             res.json({
                 order,
                 stripeStatus: session.payment_status, // 'paid' | 'unpaid' | 'no_payment_required'
