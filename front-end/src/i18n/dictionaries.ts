@@ -2,20 +2,20 @@ export const dictionaries = {
   ru: {
     seo: {
       home: {
-        title: "EduTech — Инновационная LMS для Казахстана (Алматы, Астана, Шымкент)",
-        description: "EduTech: масштабируемая система управления обучением (LMS) для компаний и школ в Алматы, Астане и Шымкенте. Автоматизируйте образование с нами.",
+        title: "Qallcert — Инновационная LMS для Казахстана (Алматы, Астана, Шымкент)",
+        description: "Qallcert: масштабируемая система управления обучением (LMS) для компаний и школ в Алматы, Астане и Шымкенте. Автоматизируйте образование с нами.",
       },
       pricing: {
-        title: "Тарифы EduTech — Доступные решения для обучения в Казахстане",
-        description: "Гибкие тарифные планы EduTech для бизнеса в Казахстане. Оплата в KZT, интеграция со Stripe, закрывающие документы для ТОО и ИП.",
+        title: "Тарифы Qallcert — Доступные решения для обучения в Казахстане",
+        description: "Гибкие тарифные планы Qallcert для бизнеса в Казахстане. Оплата в KZT, интеграция со Stripe, закрывающие документы для ТОО и ИП.",
       },
       features: {
-        title: "Возможности EduTech — Платформа для обучения (LMS)",
-        description: "Узнайте о возможностях EduTech: роли (Студент, Учитель, Администратор), надежная архитектура (Nginx, Redis, MinIO), автогенерация сертификатов.",
+        title: "Возможности Qallcert — Платформа для обучения (LMS)",
+        description: "Узнайте о возможностях Qallcert: роли (Студент, Учитель, Администратор), надежная архитектура (Nginx, Redis, MinIO), автогенерация сертификатов.",
       },
       contacts: {
-        title: "Контакты EduTech — Офисы в Алматы и Астане",
-        description: "Свяжитесь с командой EduTech. Наши офисы: БЦ на Аль-Фараби (Алматы) и EXPO-центр (Астана).",
+        title: "Контакты Qallcert — Офисы в Алматы и Астане",
+        description: "Свяжитесь с командой Qallcert. Наши офисы: БЦ на Аль-Фараби (Алматы) и EXPO-центр (Астана).",
       }
     },
     home: {
@@ -44,7 +44,7 @@ export const dictionaries = {
         { text: "Автопроверка задач — это супер. Не нужно ждать преподавателя, сразу видишь ошибки в коде. Прошла курс по Python.", author: "Мария Волкова", location: "Астана" },
         { text: "Очень сильная программа по алгоритмам. Помогла пройти технический отбор в крупную финтех-компанию.", author: "Бахтияр Нургалиев", location: "Шымкент" }
       ],
-      coursesTitle: "Популярные направления обучения",
+      coursesTitle: "Наши курсы",
       courses: [
         { title: "Python-разработчик", level: "С нуля", duration: "6 месяцев", desc: "Освойте самый популярный язык для бэкенда, анализа данных и ИИ. Напишите свои первые веб-сервисы и ботов." },
         { title: "Frontend-разработчик (React)", level: "С нуля", duration: "5 месяцев", desc: "Научитесь создавать интерактивные интерфейсы веб-приложений. Освойте JavaScript, TypeScript и React." },
@@ -139,8 +139,8 @@ export const dictionaries = {
     contacts: {
       officesTitle: "Наши офисы в Казахстане",
       offices: [
-        { city: "Алматы", address: "БЦ на Аль-Фараби / Almaty Hub", phone: "+7 707 123 4567", email: "almaty@edutech.kz" },
-        { city: "Астана", address: "EXPO-центр / Astana Hub", phone: "+7 701 987 6543", email: "astana@edutech.kz" }
+        { city: "Алматы", address: "БЦ на Аль-Фараби / Almaty Hub", phone: "+7 707 123 4567", email: "almaty@Qallcert.kz" },
+        { city: "Астана", address: "EXPO-центр / Astana Hub", phone: "+7 701 987 6543", email: "astana@Qallcert.kz" }
       ],
       formTitle: "Связаться с нами",
       formName: "Имя",
@@ -150,6 +150,7 @@ export const dictionaries = {
     },
     layout: {
       nav: {
+        home: "Главная",
         features: "Возможности",
         pricing: "Тарифы",
         contacts: "Контакты",
@@ -173,20 +174,20 @@ export const dictionaries = {
   kk: {
     seo: {
       home: {
-        title: "EduTech — Қазақстанға арналған инновациялық LMS (Алматы, Астана, Шымкент)",
-        description: "EduTech: Алматы, Астана және Шымкенттегі компаниялар мен мектептерге арналған масштабталатын оқытуды басқару жүйесі.",
+        title: "Qallcert — Қазақстанға арналған инновациялық LMS (Алматы, Астана, Шымкент)",
+        description: "Qallcert: Алматы, Астана және Шымкенттегі компаниялар мен мектептерге арналған масштабталатын оқытуды басқару жүйесі.",
       },
       pricing: {
-        title: "EduTech Тарифтері — Қазақстандағы қолжетімді оқыту шешімдері",
-        description: "Қазақстандағы бизнеске арналған EduTech икемді тарифтік жоспарлары. KZT төлемі, Stripe.",
+        title: "Qallcert Тарифтері — Қазақстандағы қолжетімді оқыту шешімдері",
+        description: "Қазақстандағы бизнеске арналған Qallcert икемді тарифтік жоспарлары. KZT төлемі, Stripe.",
       },
       features: {
-        title: "EduTech Мүмкіндіктері — Оқыту платформасы (LMS)",
-        description: "EduTech мүмкіндіктері туралы біліңіз: рөлдер, сенімді архитектура.",
+        title: "Qallcert Мүмкіндіктері — Оқыту платформасы (LMS)",
+        description: "Qallcert мүмкіндіктері туралы біліңіз: рөлдер, сенімді архитектура.",
       },
       contacts: {
-        title: "EduTech Контактілері — Алматы және Астанадағы кеңселер",
-        description: "EduTech командасымен байланысыңыз. Біздің кеңселер: Әл-Фарабидегі БО (Алматы) және EXPO-орталық (Астана).",
+        title: "Qallcert Контактілері — Алматы және Астанадағы кеңселер",
+        description: "Qallcert командасымен байланысыңыз. Біздің кеңселер: Әл-Фарабидегі БО (Алматы) және EXPO-орталық (Астана).",
       }
     },
     home: {
@@ -215,7 +216,7 @@ export const dictionaries = {
         { text: "Есептерді автоматты тексеру — тамаша. Мұғалімді күтудің қажеті жоқ, қателерді бірден көресің.", author: "Мария Волкова", location: "Астана" },
         { text: "Алгоритмдер бойынша өте күшті бағдарлама. Ірі финтех компаниясындағы техникалық іріктеуден өтуге көмектесті.", author: "Бақтияр Нұрғалиев", location: "Шымкент" }
       ],
-      coursesTitle: "Танымал оқу бағыттары",
+      coursesTitle: "Біздің курстар",
       courses: [
         { title: "Python әзірлеушісі", level: "Нөлден бастап", duration: "6 ай", desc: "Бэкенд, деректерді талдау және ЖИ үшін ең танымал тілді меңгеріңіз. Алғашқы веб-қызметтеріңіз бен боттарыңызды жазыңыз." },
         { title: "Frontend әзірлеушісі (React)", level: "Нөлден бастап", duration: "5 ай", desc: "Веб-қосымшалардың интерактивті интерфейстерін жасауды үйреніңіз. JavaScript, TypeScript және React меңгеріңіз." },
@@ -310,8 +311,8 @@ export const dictionaries = {
     contacts: {
       officesTitle: "Қазақстандағы біздің кеңселер",
       offices: [
-        { city: "Алматы", address: "Әл-Фарабидегі БО / Almaty Hub", phone: "+7 707 123 4567", email: "almaty@edutech.kz" },
-        { city: "Астана", address: "EXPO-орталық / Astana Hub", phone: "+7 701 987 6543", email: "astana@edutech.kz" }
+        { city: "Алматы", address: "Әл-Фарабидегі БО / Almaty Hub", phone: "+7 707 123 4567", email: "almaty@Qallcert.kz" },
+        { city: "Астана", address: "EXPO-орталық / Astana Hub", phone: "+7 701 987 6543", email: "astana@Qallcert.kz" }
       ],
       formTitle: "Бізбен байланысыңыз",
       formName: "Аты",
@@ -321,6 +322,7 @@ export const dictionaries = {
     },
     layout: {
       nav: {
+        home: "Басты бет",
         features: "Мүмкіндіктер",
         pricing: "Тарифтер",
         contacts: "Контактілер",
@@ -344,20 +346,20 @@ export const dictionaries = {
   en: {
     seo: {
       home: {
-        title: "EduTech — Innovative LMS for Kazakhstan (Almaty, Astana, Shymkent)",
-        description: "EduTech: Scalable Learning Management System (LMS) for companies and schools in Almaty, Astana, and Shymkent. Automate education with us.",
+        title: "Qallcert — Innovative LMS for Kazakhstan (Almaty, Astana, Shymkent)",
+        description: "Qallcert: Scalable Learning Management System (LMS) for companies and schools in Almaty, Astana, and Shymkent. Automate education with us.",
       },
       pricing: {
-        title: "EduTech Pricing — Affordable Learning Solutions in Kazakhstan",
-        description: "Flexible EduTech pricing plans for business in Kazakhstan. Pay in KZT, Stripe integration, closing documents for LLP and IE.",
+        title: "Qallcert Pricing — Affordable Learning Solutions in Kazakhstan",
+        description: "Flexible Qallcert pricing plans for business in Kazakhstan. Pay in KZT, Stripe integration, closing documents for LLP and IE.",
       },
       features: {
-        title: "EduTech Features — Learning Platform (LMS)",
-        description: "Learn about EduTech features: roles (Student, Teacher, Admin), reliable architecture (Nginx, Redis, MinIO), auto-generation of certificates.",
+        title: "Qallcert Features — Learning Platform (LMS)",
+        description: "Learn about Qallcert features: roles (Student, Teacher, Admin), reliable architecture (Nginx, Redis, MinIO), auto-generation of certificates.",
       },
       contacts: {
-        title: "EduTech Contacts — Offices in Almaty and Astana",
-        description: "Contact the EduTech team. Our offices: Business Center on Al-Farabi (Almaty) and EXPO Center (Astana).",
+        title: "Qallcert Contacts — Offices in Almaty and Astana",
+        description: "Contact the Qallcert team. Our offices: Business Center on Al-Farabi (Almaty) and EXPO Center (Astana).",
       }
     },
     home: {
@@ -386,7 +388,7 @@ export const dictionaries = {
         { text: "The auto-grader is awesome. You don't have to wait for the teacher and immediately see syntax or logical errors.", author: "Maria Volkova", location: "Astana" },
         { text: "Extremely rigorous algorithms module. It helped me pass the technical interview at a major fintech company.", author: "Bakhtiyar Nurgaliyev", location: "Shymkent" }
       ],
-      coursesTitle: "Popular Learning Tracks",
+      coursesTitle: "Our Courses",
       courses: [
         { title: "Python Developer", level: "Beginner", duration: "6 months", desc: "Master the most popular language for backend, data science, and AI. Build your first web services and bots." },
         { title: "Frontend Developer (React)", level: "Beginner", duration: "5 months", desc: "Learn to build interactive web application interfaces. Master JavaScript, TypeScript, and React." },
@@ -481,8 +483,8 @@ export const dictionaries = {
     contacts: {
       officesTitle: "Our Offices in Kazakhstan",
       offices: [
-        { city: "Almaty", address: "BC on Al-Farabi / Almaty Hub", phone: "+7 707 123 4567", email: "almaty@edutech.kz" },
-        { city: "Astana", address: "EXPO Center / Astana Hub", phone: "+7 701 987 6543", email: "astana@edutech.kz" }
+        { city: "Almaty", address: "BC on Al-Farabi / Almaty Hub", phone: "+7 707 123 4567", email: "almaty@Qallcert.kz" },
+        { city: "Astana", address: "EXPO Center / Astana Hub", phone: "+7 701 987 6543", email: "astana@Qallcert.kz" }
       ],
       formTitle: "Contact Us",
       formName: "Name",
@@ -492,6 +494,7 @@ export const dictionaries = {
     },
     layout: {
       nav: {
+        home: "Home",
         features: "Features",
         pricing: "Pricing",
         contacts: "Contacts",

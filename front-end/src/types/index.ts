@@ -58,6 +58,7 @@ export interface Course {
     is_published: boolean;
     price?: number | null;
     currency?: string;
+    is_editable?: boolean;
     created_at: string;
     updated_at: string;
 }

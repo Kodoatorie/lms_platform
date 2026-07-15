@@ -12,7 +12,7 @@ export class CourseModel {
         return result.rows[0];
     }
 
-    async findAll({ teacherId, search, role } = {}) {
+    async findAll({ teacherId, search, role, currentUserId } = {}) {
         const conditions = [];
         const values = [];
         let idx = 1;
@@ -23,6 +23,10 @@ export class CourseModel {
         } else if (role === 'student') {
             // Students only see published courses
             conditions.push(`c.is_published = true`);
+        } else if (role === 'teacher' && currentUserId) {
+            // Teachers see all published courses + their own drafts/published courses
+            conditions.push(`(c.is_published = true OR c.teacher_id = $${idx++})`);
+            values.push(currentUserId);
         }
 
         if (search && search.trim()) {
@@ -107,6 +111,46 @@ export class CourseModel {
 
     async delete(id) {
         await this.pool.query(`DELETE FROM courses WHERE id = $1`, [id]);
+        return true;
+    }
+
+    async isCoauthor(courseId, teacherId) {
+        const result = await this.pool.query(
+            `SELECT 1 FROM course_coauthors WHERE course_id = $1 AND teacher_id = $2`,
+            [courseId, teacherId]
+        );
+        return result.rows.length > 0;
+    }
+
+    async findCoauthors(courseId) {
+        const result = await this.pool.query(
+            `SELECT u.id, u.email, tp.full_name
+             FROM course_coauthors cc
+             JOIN users u ON cc.teacher_id = u.id
+             LEFT JOIN teacher_profiles tp ON tp.user_id = u.id
+             WHERE cc.course_id = $1
+             ORDER BY cc.created_at ASC`,
+            [courseId]
+        );
+        return result.rows;
+    }
+
+    async addCoauthor(courseId, teacherId) {
+        const result = await this.pool.query(
+            `INSERT INTO course_coauthors (course_id, teacher_id)
+             VALUES ($1, $2)
+             ON CONFLICT (course_id, teacher_id) DO NOTHING
+             RETURNING *`,
+            [courseId, teacherId]
+        );
+        return result.rows[0];
+    }
+
+    async removeCoauthor(courseId, teacherId) {
+        await this.pool.query(
+            `DELETE FROM course_coauthors WHERE course_id = $1 AND teacher_id = $2`,
+            [courseId, teacherId]
+        );
         return true;
     }
 }

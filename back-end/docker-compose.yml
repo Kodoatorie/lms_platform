@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-edu}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-edu}" ]
       interval: 10s

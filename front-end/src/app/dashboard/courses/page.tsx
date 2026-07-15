@@ -23,16 +23,17 @@ export default function CoursesPage() {
     const { t } = useTranslation();
     const isTeacher = user?.role === 'teacher';
 
+    const [activeTab, setActiveTab] = useState<'all' | 'my'>('all');
     const [searchInput, setSearchInput] = useState('');
     const debouncedSearch = useDebounce(searchInput, 300);
 
-    // Fetch courses — re-fetch when search query changes
+    // Fetch courses — re-fetch when search query or tab changes
     useEffect(() => {
         dispatch(fetchCourses({
             search: debouncedSearch || undefined,
-            teacherId: isTeacher && user ? user.id : undefined
+            teacherId: isTeacher && activeTab === 'my' && user ? user.id : undefined
         }));
-    }, [dispatch, debouncedSearch, isTeacher, user]);
+    }, [dispatch, debouncedSearch, isTeacher, activeTab, user]);
 
     return (
         <div className="space-y-6">
@@ -53,6 +54,32 @@ export default function CoursesPage() {
                     </Button>
                 )}
             </header>
+
+            {/* Tabs for Teachers */}
+            {isTeacher && (
+                <div className="flex border-b border-slate-200">
+                    <button
+                        onClick={() => setActiveTab('all')}
+                        className={`py-3 px-6 text-sm font-semibold border-b-2 transition-all ${
+                            activeTab === 'all'
+                                ? 'border-indigo-600 text-indigo-600'
+                                : 'border-transparent text-slate-500 hover:text-slate-800'
+                        }`}
+                    >
+                        {t('courses', 'allCourses')}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('my')}
+                        className={`py-3 px-6 text-sm font-semibold border-b-2 transition-all ${
+                            activeTab === 'my'
+                                ? 'border-indigo-600 text-indigo-600'
+                                : 'border-transparent text-slate-500 hover:text-slate-800'
+                        }`}
+                    >
+                        {t('courses', 'myCourses')}
+                    </button>
+                </div>
+            )}
 
             {/* Search bar */}
             <div className="relative max-w-md">

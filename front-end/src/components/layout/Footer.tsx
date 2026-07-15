@@ -97,10 +97,10 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} {APP_NAME}. {t.layout.footer.rights}
           </p>
           <div className="flex items-center gap-6">
-            <Link href="#" className="hover:text-indigo-600 transition-colors">
+            <Link href="/privacy" className="hover:text-indigo-600 transition-colors">
               {t.layout.footer.privacy}
             </Link>
-            <Link href="#" className="hover:text-indigo-600 transition-colors">
+            <Link href="/terms" className="hover:text-indigo-600 transition-colors">
               {t.layout.footer.terms}
             </Link>
           </div>
