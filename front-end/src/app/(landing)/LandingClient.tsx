@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { getDictionary } from '../../i18n/dictionaries';
 import { APP_NAME } from '../../lib/constants';
 import { getLocale } from '../../lib/i18n/useTranslation';
+import { useAppSelector } from '../../store/hooks';
+import apiClient from '../../lib/api/client';
 import {
   Layers,
   CreditCard,
@@ -64,12 +66,28 @@ export default function LandingClient({ locale }: { locale: string }) {
   const [activeLocale, setActiveLocale] = useState(locale);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const { user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     const currentLocale = getLocale();
     if (currentLocale && currentLocale !== activeLocale) {
       setActiveLocale(currentLocale);
     }
+
+    const loadCourses = async () => {
+      try {
+        const { data } = await apiClient.get('/courses');
+        setCourses(data || []);
+      } catch (err) {
+        console.error('Failed to fetch courses', err);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+
+    loadCourses();
   }, []);
 
   const nextTestimonial = () => {
@@ -82,6 +100,84 @@ export default function LandingClient({ locale }: { locale: string }) {
 
   const normalizedLocale = activeLocale === 'kz' ? 'kk' : activeLocale;
   const t = getDictionary(normalizedLocale);
+
+  const localT = {
+    contributionTitle: {
+      ru: 'Наш вклад в развитие IT-кадров Казахстана',
+      en: 'Our contribution to the development of IT talent in Kazakhstan',
+      kk: 'Қазақстанның IT-мамандарын дамытуға қосқан үлесіміз'
+    },
+    incubatorTitle: {
+      ru: 'Инкубатор стартапов для студентов',
+      en: 'Startup incubator for students',
+      kk: 'Студенттерге арналған стартап инкубаторы'
+    },
+    incubatorDesc: {
+      ru: 'Помогаем запустить собственный IT-продукт, консультируем по архитектуре и даем гранты на облачную инфраструктуру.',
+      en: 'We help launch your own IT product, consult on architecture, and provide grants for cloud infrastructure.',
+      kk: 'Жеке IT өніміңізді іске қосуға көмектесеміз, архитектура бойынша кеңес береміз және бұлттық инфрақұрылымға гранттар береміз.'
+    },
+    applyBtn: {
+      ru: 'Подать заявку',
+      en: 'Apply now',
+      kk: 'Өтінім беру'
+    },
+    recommendationsTitle: {
+      ru: 'Рекомендации в Astana Hub',
+      en: 'Recommendations to Astana Hub',
+      kk: 'Astana Hub-қа ұсыныстар'
+    },
+    recommendationsDesc: {
+      ru: 'Отправляем резюме лучших студентов напрямую HR-директорам ведущих продуктовых и сервисных IT-компаний РК.',
+      en: 'We send the resumes of our top students directly to the HR directors of leading product and service IT companies in Kazakhstan.',
+      kk: 'Үздік студенттердің түйіндемелерін Қазақстанның жетекші өнімдік және сервистік IT компанияларының HR директордарына тікелей жібереміз.'
+    },
+    partnershipLink: {
+      ru: 'Подробнее о партнерстве',
+      en: 'Read more about partnership',
+      kk: 'Серіктестік туралы толығырақ'
+    },
+    alihan: {
+      ru: 'Алихан: Создал pull request для главной страницы',
+      en: 'Alikhan: Created a pull request for the home page',
+      kk: 'Әлихан: Басты бетке pull request жасады'
+    },
+    curator: {
+      ru: 'Куратор:',
+      en: 'Curator:',
+      kk: 'Куратор:'
+    },
+    curatorComment: {
+      ru: '"Отличный рефакторинг! Сливаю."',
+      en: '"Great refactoring! Merging now."',
+      kk: '"Керемет рефакторинг! Біріктіремін."'
+    },
+    aibek: {
+      ru: 'Айбек Сериков',
+      en: 'Aibek Serikov',
+      kk: 'Айбек Серіков'
+    },
+    resumeStatus: {
+      ru: 'Резюме одобрено',
+      en: 'Resume Approved',
+      kk: 'Түйіндеме мақұлданды'
+    },
+    resumeOk: {
+      ru: 'Анализ резюме: OK',
+      en: 'Resume Analysis: OK',
+      kk: 'Түйіндеме талдауы: OK'
+    },
+    responses: {
+      ru: '12 Откликов',
+      en: '12 Responses',
+      kk: '12 Жауап'
+    },
+    moreDetails: {
+      ru: 'Подробнее о курсе',
+      en: 'Course Details',
+      kk: 'Курс туралы толығырақ'
+    }
+  };
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -152,29 +248,6 @@ export default function LandingClient({ locale }: { locale: string }) {
             <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
           </Link>
         </div>
-
-        {/* Grayscale Scrolling Partner Logos (Screenshot 2 style) */}
-        <div className="w-full max-w-4xl overflow-hidden mt-20 relative py-4 border-y border-slate-200/40 [mask-image:linear-gradient(to_right,transparent,white_20%,white_80%,transparent)]">
-          <div className="animate-marquee whitespace-nowrap flex items-center gap-16 text-slate-400 font-extrabold text-xs tracking-widest uppercase">
-            <span>ASTANA HUB</span>
-            <span>ALMATY TECH</span>
-            <span>KASPI.KZ</span>
-            <span>KOLESA GROUP</span>
-            <span>BTS DIGITAL</span>
-            <span>JUSAN BANK</span>
-            <span>CHOCOFAMILY</span>
-            <span>MYCAR.KZ</span>
-            {/* Duplicated for loop */}
-            <span>ASTANA HUB</span>
-            <span>ALMATY TECH</span>
-            <span>KASPI.KZ</span>
-            <span>KOLESA GROUP</span>
-            <span>BTS DIGITAL</span>
-            <span>JUSAN BANK</span>
-            <span>CHOCOFAMILY</span>
-            <span>MYCAR.KZ</span>
-          </div>
-        </div>
       </main>
 
       {/* Redesigned Dark Stats Section (Screenshot 1 style) */}
@@ -203,7 +276,7 @@ export default function LandingClient({ locale }: { locale: string }) {
         <div className="max-w-6xl mx-auto space-y-12 relative z-10">
           <div className="text-center space-y-4">
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white">
-              Наш вклад в развитие IT-кадров Казахстана
+              {localT.contributionTitle[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.contributionTitle.ru}
             </h2>
             <div className="w-16 h-1 bg-indigo-500 mx-auto rounded-full" />
           </div>
@@ -226,47 +299,72 @@ export default function LandingClient({ locale }: { locale: string }) {
           <div className="w-16 h-1 bg-indigo-600 mx-auto rounded-full" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {t.home.courses.map((course, idx) => {
-            const colors = [
-              { border: "hover:border-indigo-500/40", shadow: "hover:shadow-indigo-500/5", badgeBg: "bg-indigo-50 text-indigo-700" },
-              { border: "hover:border-pink-500/40", shadow: "hover:shadow-pink-500/5", badgeBg: "bg-pink-50 text-pink-700" },
-              { border: "hover:border-cyan-500/40", shadow: "hover:shadow-cyan-500/5", badgeBg: "bg-cyan-50 text-cyan-700" }
-            ][idx % 3];
+        {loadingCourses ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {(courses.length > 0 ? courses : t.home.courses).map((course, idx) => {
+              const colors = [
+                { border: "hover:border-indigo-500/40", shadow: "hover:shadow-indigo-500/5", badgeBg: "bg-indigo-50 text-indigo-700" },
+                { border: "hover:border-pink-500/40", shadow: "hover:shadow-pink-500/5", badgeBg: "bg-pink-50 text-pink-700" },
+                { border: "hover:border-cyan-500/40", shadow: "hover:shadow-cyan-500/5", badgeBg: "bg-cyan-50 text-cyan-700" }
+              ][idx % 3];
 
-            return (
-              <div
-                key={idx}
-                className={`bg-white border border-slate-200/60 rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${colors.border} ${colors.shadow}`}
-              >
-                <div className="space-y-6">
-                  <div className="flex gap-2.5">
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${colors.badgeBg}`}>
-                      {course.level}
-                    </span>
-                    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {course.duration}
-                    </span>
+              // Determine level, duration, and CTA labels dynamically or use fallback
+              const isDbCourse = !!course.id;
+              const level = isDbCourse
+                ? (activeLocale === 'en' ? 'Course' : activeLocale === 'kz' ? 'Курс' : 'Курс')
+                : course.level;
+              const duration = isDbCourse
+                ? (activeLocale === 'en' ? '3-6 months' : activeLocale === 'kz' ? '3-6 ай' : '3-6 месяцев')
+                : course.duration;
+              const price = isDbCourse ? Number(course.price) : 0;
+
+              // CTA link
+              const targetUrl = isDbCourse 
+                ? `/courses/${course.id}` 
+                : '/login';
+
+              const ctaText = isDbCourse 
+                ? (localT.moreDetails[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.moreDetails.ru) 
+                : t.home.ctaStart;
+
+              return (
+                <div
+                  key={idx}
+                  className={`bg-white border border-slate-200/60 rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 ${colors.border} ${colors.shadow}`}
+                >
+                  <div className="space-y-6">
+                    <div className="flex gap-2.5">
+                      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${colors.badgeBg}`}>
+                        {level}
+                      </span>
+                      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {duration}
+                      </span>
+                    </div>
+
+                    <h3 className="text-2xl font-bold text-slate-900">{course.title}</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed">{course.description || course.desc}</p>
                   </div>
 
-                  <h3 className="text-2xl font-bold text-slate-900">{course.title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">{course.desc}</p>
+                  <div className="pt-8">
+                    <Link
+                      href={targetUrl}
+                      className="inline-flex w-full items-center justify-center gap-2 h-12 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
+                    >
+                      {ctaText}
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
                 </div>
-
-                <div className="pt-8">
-                  <Link
-                    href="/login"
-                    className="inline-flex w-full items-center justify-center gap-2 h-12 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300"
-                  >
-                    {t.home.ctaStart}
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
 
@@ -313,22 +411,22 @@ export default function LandingClient({ locale }: { locale: string }) {
               const yEnd = 300 - length * Math.sin(angleRad);
               return (
                 <g key={idx}>
-                  <line 
-                    x1="500" 
-                    y1="300" 
-                    x2={xEnd} 
-                    y2={yEnd} 
-                    stroke="currentColor" 
-                    strokeWidth="0.8" 
-                    opacity={0.25 + (idx % 3) * 0.15} 
+                  <line
+                    x1="500"
+                    y1="300"
+                    x2={xEnd}
+                    y2={yEnd}
+                    stroke="currentColor"
+                    strokeWidth="0.8"
+                    opacity={0.25 + (idx % 3) * 0.15}
                   />
-                  <circle 
-                    cx={xEnd} 
-                    cy={yEnd} 
-                    r={1.2 + (idx % 2) * 0.8} 
-                    fill={idx % 3 === 0 ? "#ffffff" : idx % 2 === 0 ? "#a5b4fc" : "#818cf8"} 
-                    className="animate-pulse" 
-                    style={{ animationDelay: `${idx * 150}ms` }} 
+                  <circle
+                    cx={xEnd}
+                    cy={yEnd}
+                    r={1.2 + (idx % 2) * 0.8}
+                    fill={idx % 3 === 0 ? "#ffffff" : idx % 2 === 0 ? "#a5b4fc" : "#818cf8"}
+                    className="animate-pulse"
+                    style={{ animationDelay: `${idx * 150}ms` }}
                   />
                 </g>
               );
@@ -384,7 +482,9 @@ export default function LandingClient({ locale }: { locale: string }) {
                         <div className="flex gap-2">
                           <div className="w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center font-bold text-[9px] text-white">AS</div>
                           <div className="bg-slate-800/80 rounded-lg p-2 flex-grow">
-                            <p className="text-[11px] text-slate-300 leading-normal"><strong className="text-indigo-400">Алихан:</strong> Создал pull request для главной страницы</p>
+                            <p className="text-[11px] text-slate-300 leading-normal">
+                              {localT.alihan[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.alihan.ru}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -400,8 +500,12 @@ export default function LandingClient({ locale }: { locale: string }) {
                           <circle cx="50" cy="20" r="3" fill="#22c55e" />
                         </svg>
                         <div className="flex-grow bg-slate-900/60 border border-slate-800/60 rounded p-1.5 text-left">
-                          <span className="text-indigo-400 font-semibold">Куратор:</span>
-                          <p className="text-slate-300 text-[10px] leading-tight mt-0.5">&quot;Отличный рефакторинг! Сливаю.&quot;</p>
+                          <span className="text-indigo-400 font-semibold">
+                            {localT.curator[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.curator.ru}
+                          </span>
+                          <p className="text-slate-300 text-[10px] leading-tight mt-0.5">
+                            {localT.curatorComment[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.curatorComment.ru}
+                          </p>
                         </div>
                       </div>
                     );
@@ -412,7 +516,9 @@ export default function LandingClient({ locale }: { locale: string }) {
                           <div className="absolute top-1 right-1 w-6 h-6 rounded-full border border-indigo-500/20 bg-indigo-500/5 flex items-center justify-center text-[8px]">🏆</div>
                           <div className="text-[7px] tracking-wider text-indigo-400 font-bold uppercase">Certificate of Completion</div>
                           <div className="space-y-0.5">
-                            <div className="text-[9px] font-bold text-white leading-tight">Айбек Сериков</div>
+                            <div className="text-[9px] font-bold text-white leading-tight">
+                              {localT.aibek[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.aibek.ru}
+                            </div>
                             <div className="text-[6px] text-slate-400">Python Web Development Specialist</div>
                           </div>
                           <div className="text-[5px] text-slate-500 border-t border-slate-900 pt-0.5">ID: EDUTECH-89732-KZ</div>
@@ -434,13 +540,19 @@ export default function LandingClient({ locale }: { locale: string }) {
                   case 5: // Career support
                     return (
                       <div className="w-full mt-4 bg-slate-900/60 border border-slate-800/60 rounded-xl p-3 flex flex-col gap-2.5 text-left font-sans select-none">
-                        <div className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Резюме одобрено</div>
+                        <div className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">
+                          {localT.resumeStatus[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.resumeStatus.ru}
+                        </div>
                         <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
                           <div className="bg-gradient-to-r from-cyan-500 to-indigo-500 h-full w-[85%]" />
                         </div>
                         <div className="flex justify-between items-center text-[9px] text-slate-400">
-                          <span>Анализ резюме: OK</span>
-                          <span className="text-emerald-400 font-bold">12 Откликов</span>
+                          <span>
+                            {localT.resumeOk[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.resumeOk.ru}
+                          </span>
+                          <span className="text-emerald-400 font-bold">
+                            {localT.responses[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.responses.ru}
+                          </span>
                         </div>
                       </div>
                     );
@@ -486,14 +598,16 @@ export default function LandingClient({ locale }: { locale: string }) {
 
           <div className="space-y-4 max-w-[65%] text-left">
             <span className="text-xs font-extrabold uppercase tracking-widest text-pink-600">EduTech Incubator</span>
-            <h3 className="text-2xl font-bold text-slate-900">Инкубатор стартапов для студентов</h3>
+            <h3 className="text-2xl font-bold text-slate-900">
+              {localT.incubatorTitle[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.incubatorTitle.ru}
+            </h3>
             <p className="text-sm text-slate-500 leading-relaxed">
-              Помогаем запустить собственный IT-продукт, консультируем по архитектуре и даем гранты на облачную инфраструктуру.
+              {localT.incubatorDesc[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.incubatorDesc.ru}
             </p>
           </div>
           <div className="pt-6 text-left">
             <Link href="/contacts" className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 group-hover:text-indigo-700">
-              Подать заявку <span className="ml-1 transition-transform group-hover:translate-x-1">→</span>
+              {localT.applyBtn[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.applyBtn.ru} <span className="ml-1 transition-transform group-hover:translate-x-1">→</span>
             </Link>
           </div>
         </div>
@@ -504,14 +618,16 @@ export default function LandingClient({ locale }: { locale: string }) {
 
           <div className="space-y-4 max-w-[65%] text-left">
             <span className="text-xs font-extrabold uppercase tracking-widest text-orange-600">Job Connections</span>
-            <h3 className="text-2xl font-bold text-slate-900">Рекомендации в Astana Hub</h3>
+            <h3 className="text-2xl font-bold text-slate-900">
+              {localT.recommendationsTitle[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.recommendationsTitle.ru}
+            </h3>
             <p className="text-sm text-slate-500 leading-relaxed">
-              Отправляем резюме лучших студентов напрямую HR-директорам ведущих продуктовых и сервисных IT-компаний РК.
+              {localT.recommendationsDesc[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.recommendationsDesc.ru}
             </p>
           </div>
           <div className="pt-6 text-left">
             <Link href="/contacts" className="inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 group-hover:text-indigo-700">
-              Подробнее о партнерстве <span className="ml-1 transition-transform group-hover:translate-x-1">→</span>
+              {localT.partnershipLink[normalizedLocale as 'ru' | 'en' | 'kk'] || localT.partnershipLink.ru} <span className="ml-1 transition-transform group-hover:translate-x-1">→</span>
             </Link>
           </div>
         </div>
@@ -611,19 +727,22 @@ export default function LandingClient({ locale }: { locale: string }) {
 
       {/* Pre-footer CTA Block */}
       <section className="z-10 w-full max-w-6xl px-4 py-12 mb-16">
-        <div className="bg-gradient-to-r from-indigo-900 to-purple-900 rounded-3xl p-12 text-center text-white relative overflow-hidden shadow-xl">
-          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/20 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-pink-500/20 blur-3xl pointer-events-none animate-flowing-gradient bg-gradient-to-r" />
+        <div className="bg-white border border-slate-200/60 rounded-3xl p-12 text-center relative overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[300px] bg-gradient-to-b from-indigo-500/5 to-transparent blur-2xl pointer-events-none" />
 
           <div className="max-w-2xl mx-auto space-y-6 relative z-10">
-            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight">{t.home.ctaTitle}</h2>
-            <p className="text-indigo-200 text-lg leading-relaxed">
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+              {t.home.ctaTitle}
+            </h2>
+            <div className="w-16 h-1 bg-indigo-600 mx-auto rounded-full" />
+            
+            <p className="text-slate-600 text-lg leading-relaxed pt-2">
               {t.home.ctaSubtitle}
             </p>
             <div className="pt-6">
               <Link
                 href="/login"
-                className="inline-flex h-14 items-center justify-center rounded-full bg-white px-8 text-base font-bold text-indigo-900 shadow-lg transition-all duration-300 hover:bg-slate-50 hover:-translate-y-0.5"
+                className="inline-flex h-12 items-center justify-center rounded-2xl bg-indigo-600 px-8 text-sm font-semibold text-white shadow-md shadow-indigo-600/10 transition-all duration-300 hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5"
               >
                 {t.home.ctaButton}
               </Link>

@@ -2121,6 +2121,43 @@ ALTER TABLE ONLY public.user_stats
 
 
 --
+-- Name: course_coauthors; Type: TABLE; Schema: public; Owner: edu
+--
+
+CREATE TABLE public.course_coauthors (
+    id integer NOT NULL,
+    course_id integer NOT NULL,
+    teacher_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+ALTER TABLE public.course_coauthors OWNER TO edu;
+
+CREATE SEQUENCE public.course_coauthors_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER TABLE public.course_coauthors_id_seq OWNER TO edu;
+ALTER SEQUENCE public.course_coauthors_id_seq OWNED BY public.course_coauthors.id;
+ALTER TABLE ONLY public.course_coauthors ALTER COLUMN id SET DEFAULT nextval('public.course_coauthors_id_seq'::regclass);
+
+ALTER TABLE ONLY public.course_coauthors
+    ADD CONSTRAINT course_coauthors_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.course_coauthors
+    ADD CONSTRAINT course_coauthors_course_id_teacher_id_key UNIQUE (course_id, teacher_id);
+
+ALTER TABLE ONLY public.course_coauthors
+    ADD CONSTRAINT course_coauthors_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.course_coauthors
+    ADD CONSTRAINT course_coauthors_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+--
 -- PostgreSQL database dump complete
 --
 

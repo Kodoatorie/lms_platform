@@ -222,7 +222,7 @@ EnrollmentService.enrollUser()   ← student gets course access
 #### Backend — copy and fill in:
 
 ```bash
-cd backend
+cd back-end
 cp .env.example .env
 ```
 
@@ -232,7 +232,7 @@ PORT=3000
 NODE_ENV=development
 
 # PostgreSQL
-POSTGRES_URI=postgresql://edu:edu@localhost:5432/edutech
+POSTGRES_URI=postgresql://edu:edu@localhost:5432/edu
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -263,13 +263,12 @@ MINIO_REGION=us-east-1
 #### Frontend — copy and fill in:
 
 ```bash
-cd frontend
-cp .env.local.example .env.local
+cd front-end
+cp .env.example .env.local
 ```
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
 
 > ⚠️ Never commit `.env` or `.env.local` to version control.
@@ -281,17 +280,13 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 git clone https://github.com/your-username/edutech-lms.git
 cd edutech-lms
 
-# 2. Fill in environment variables (see above)
-cp backend/.env.example backend/.env
+# 2. Fill in environment variables (see templates above)
+cp back-end/.env.example back-end/.env
+cp front-end/.env.example front-end/.env.local
 
 # 3. Start all services
-docker compose up -d
-
-# 4. Apply database migrations
-docker compose exec postgres psql -U edu -d edutech \
-  -f /migrations/add_minio_files.sql \
-  -f /migrations/add_publishing_and_orders.sql \
-  -f /migrations/add_stripe_integration.sql
+# (Database tables, migrations and initial seed mock data are initialized automatically!)
+docker compose up -d --build
 ```
 
 Services will be available at:
@@ -310,12 +305,12 @@ Services will be available at:
 docker compose up -d postgres redis minio
 
 # Terminal 2 — backend
-cd backend
+cd back-end
 npm install
 npm run dev
 
 # Terminal 3 — frontend
-cd frontend
+cd front-end
 npm install
 npm run dev
 
@@ -330,15 +325,15 @@ stripe listen --forward-to localhost:3000/api/orders/stripe/webhook
 ### 1. Install Stripe SDK
 
 ```bash
-cd backend
+cd back-end
 npm install stripe
 ```
 
 ### 2. Get API keys
 
 Go to [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys) and copy:
-- **Publishable key** → `STRIPE_PUBLISHABLE_KEY` (backend) and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (frontend)
-- **Secret key** → `STRIPE_SECRET_KEY` (backend only, never expose)
+- **Publishable key** → `STRIPE_PUBLISHABLE_KEY` (back-end)
+- **Secret key** → `STRIPE_SECRET_KEY` (back-end only, never expose)
 
 ### 3. Set up webhook (local dev)
 
@@ -482,7 +477,7 @@ The frontend redirects `window.location.href = checkoutUrl` — Stripe handles e
 
 ```
 edutech-lms/
-├── backend/
+├── back-end/
 │   ├── config/
 │   │   └── index.js              # env config (DB, JWT, MinIO, Stripe)
 │   ├── controllers/
@@ -510,10 +505,6 @@ edutech-lms/
 │   ├── routes/
 │   │   ├── orderRoutes.js        # webhook with express.raw(), /checkout-session
 │   │   └── ...
-│   ├── migrations/
-│   │   ├── add_minio_files.sql
-│   │   ├── add_publishing_and_orders.sql
-│   │   └── add_stripe_integration.sql   # stripe_session_id column + index
 │   ├── lib/
 │   │   ├── minio.js
 │   │   └── redis.js
@@ -526,7 +517,7 @@ edutech-lms/
 │   ├── app.js
 │   └── .env.example
 │
-└── frontend/
+└── front-end/
     ├── src/
     │   ├── app/
     │   │   └── dashboard/

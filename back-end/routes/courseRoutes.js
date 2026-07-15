@@ -10,24 +10,18 @@ import {
 
 export const createCourseRouter = (courseController) => {
     const router = Router();
-    router.use(authMiddleware);
 
-    router.post('/', roleMiddleware(['teacher']), teacherWriteLimiter, validateCreateCourse, courseController.create);
-
-    // Cache course list for 60s — high read frequency, rarely changes
+    // Public routes (no auth required for catalog browsing)
     router.get('/', studentReadLimiter, cacheMiddleware(60), courseController.getAll);
-
-    // Cache individual course for 30s
     router.get('/:courseId', studentReadLimiter, cacheMiddleware(30), courseController.getOne);
-
-    // Curriculum changes only when teacher edits — cache 30s
     router.get('/:courseId/curriculum', studentReadLimiter, cacheMiddleware(30), courseController.getCurriculum);
 
-    router.patch('/:courseId', roleMiddleware(['teacher']), teacherWriteLimiter, validateUpdateCourse, courseController.update);
-    router.delete('/:courseId', roleMiddleware(['teacher']), teacherWriteLimiter, courseController.delete);
-
-    router.patch('/:courseId/publish', roleMiddleware(['teacher']), teacherWriteLimiter, courseController.publish);
-    router.patch('/:courseId/unpublish', roleMiddleware(['teacher']), teacherWriteLimiter, courseController.unpublish);
+    // Protected routes (auth & teacher role required)
+    router.post('/', authMiddleware, roleMiddleware(['teacher']), teacherWriteLimiter, validateCreateCourse, courseController.create);
+    router.patch('/:courseId', authMiddleware, roleMiddleware(['teacher']), teacherWriteLimiter, validateUpdateCourse, courseController.update);
+    router.delete('/:courseId', authMiddleware, roleMiddleware(['teacher']), teacherWriteLimiter, courseController.delete);
+    router.patch('/:courseId/publish', authMiddleware, roleMiddleware(['teacher']), teacherWriteLimiter, courseController.publish);
+    router.patch('/:courseId/unpublish', authMiddleware, roleMiddleware(['teacher']), teacherWriteLimiter, courseController.unpublish);
 
     return router;
 };

@@ -12,6 +12,7 @@ const ERROR_STATUS_MAP = {
     'File too large': 413,
     'File type': 415,
     'EMAIL_NOT_VERIFIED': 403,
+    'Invalid credentials': 401,
 };
 
 function resolveStatus(err) {

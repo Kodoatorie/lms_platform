@@ -72,9 +72,9 @@ export class AuthService {
         const valid = await comparePassword(password, user.password_hash);
         if (!valid) throw new Error('Invalid credentials');
 
-        if (!user.email_verified) {
-            throw new Error('EMAIL_NOT_VERIFIED');
-        }
+        // if (!user.email_verified) {
+        //     throw new Error('EMAIL_NOT_VERIFIED');
+        // }
 
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);

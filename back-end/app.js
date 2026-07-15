@@ -18,6 +18,7 @@ import { setupWorkers } from './lib/queues.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { limiter } from './middlewares/rateLimiter.js';
 import { swaggerMiddleware, swaggerJsonMiddleware } from './swagger/swaggerMiddleware.js';
+import { seed } from './seed.js';
 
 // Models
 import { UserModel } from './models/userModel.js';
@@ -131,6 +132,29 @@ async function startServer() {
         await pool.connect();
         console.log('✅ PostgreSQL connected');
 
+        // Automatically run migrations if needed
+        try {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS public.course_coauthors (
+                    id SERIAL PRIMARY KEY,
+                    course_id integer NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
+                    teacher_id integer NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+                    created_at timestamp with time zone DEFAULT now(),
+                    UNIQUE (course_id, teacher_id)
+                );
+            `);
+            console.log('✅ Database migration: course_coauthors table ready');
+        } catch (migErr) {
+            console.error('⚠️ Database migration failed:', migErr.message);
+        }
+
+        // Automatically seed database if empty
+        try {
+            await seed(pool);
+        } catch (seedErr) {
+            console.error('⚠️ Auto-seed failed:', seedErr.message);
+        }
+
         redisClient = await initRedis(app);
         console.log('✅ Redis ready');
 
@@ -157,7 +181,7 @@ async function startServer() {
         const authService        = new AuthService(
             userModel, refreshTokenModel, studentProfileModel, teacherProfileModel, redisClient, emailService
         );
-        const courseService      = new CourseService(courseModel);
+        const courseService      = new CourseService(courseModel, userModel);
         const moduleService      = new ModuleService(moduleModel, courseModel);
         const lessonService      = new LessonService(lessonModel, moduleModel, courseModel);
         const enrollmentService  = new EnrollmentService(

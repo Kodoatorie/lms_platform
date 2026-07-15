@@ -52,6 +52,7 @@ export const translations = {
         delete: { en: 'Delete', ru: 'Удалить', kz: 'Жою' },
         edit: { en: 'Edit', ru: 'Редактировать', kz: 'Өңдеу' },
         create: { en: 'Create', ru: 'Создать', kz: 'Жасау' },
+        add: { en: 'Add', ru: 'Добавить', kz: 'Қосу' },
         back: { en: 'Back', ru: 'Назад', kz: 'Артқа' },
         search: { en: 'Search…', ru: 'Поиск…', kz: 'Іздеу…' },
         noResults: { en: 'No results found', ru: 'Ничего не найдено', kz: 'Ештеңе табылмады' },
@@ -87,6 +88,12 @@ export const translations = {
     // ── Courses ───────────────────────────────────────────────────────────────
     courses: {
         title: { en: 'Courses', ru: 'Курсы', kz: 'Курстар' },
+        allCourses: { en: 'All Courses', ru: 'Все курсы', kz: 'Барлық курстар' },
+        myCourses: { en: 'My Courses', ru: 'Мои курсы', kz: 'Сіздің курстарыңыз' },
+        readOnlyAccess: { en: 'Read-only Access', ru: 'Доступ только для чтения', kz: 'Тек оқуға арналған рұқсат' },
+        coauthors: { en: 'Course Co-authors', ru: 'Соавторы курса', kz: 'Курс соавторлары' },
+        noCoauthors: { en: 'This course has no co-authors yet.', ru: 'У этого курса пока нет соавторов.', kz: 'Бұл курста әлі соавторлар жоқ.' },
+        enterCoauthorEmail: { en: 'Teacher email', ru: 'Email преподавателя', kz: 'Оқытушы email-і' },
         createCourse: { en: 'Create Course', ru: 'Создать курс', kz: 'Курс жасау' },
         courseTitle: { en: 'Course Title', ru: 'Название курса', kz: 'Курс атауы' },
         description: { en: 'Description', ru: 'Описание', kz: 'Сипаттама' },

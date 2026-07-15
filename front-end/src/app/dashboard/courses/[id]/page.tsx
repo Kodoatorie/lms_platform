@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState, use, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
@@ -220,6 +220,21 @@ const handleEnroll = async () => {
     } finally { setIsSubmittingReview(false); }
   };
 
+  // ── Course co-authors states ──
+  const [coauthors, setCoauthors] = useState<any[]>([]);
+  const [newCoauthorEmail, setNewCoauthorEmail] = useState('');
+  const [isAddingCoauthor, setIsAddingCoauthor] = useState(false);
+  const [coauthorError, setCoauthorError] = useState<string | null>(null);
+
+  const fetchCoauthorsList = useCallback(async () => {
+    try {
+      const res = await apiClient.get(`/courses/${courseId}/coauthors`);
+      setCoauthors(res.data);
+    } catch (err) {
+      console.error('Failed to fetch coauthors', err);
+    }
+  }, [courseId]);
+
   // ── Course edit/delete ──
   const openEditModal = () => {
     if (!currentCourse) return;
@@ -228,6 +243,13 @@ const handleEnroll = async () => {
     setEditPrice(String(currentCourse.price ?? 0));
     setEditCurrency(currentCourse.currency || 'USD');
     setIsEditing(true);
+    
+    // Fetch co-authors if main owner or admin
+    if (user?.role === 'admin' || (user && Number(currentCourse.teacher_id) === Number(user.id))) {
+      fetchCoauthorsList();
+      setCoauthorError(null);
+      setNewCoauthorEmail('');
+    }
   };
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -426,7 +448,7 @@ const handleEnroll = async () => {
           </div>
 
           <div className="flex flex-col gap-3 flex-shrink-0">
-            {isTeacher ? (
+            {isTeacher && currentCourse?.is_editable ? (
               <>
                 <Button variant="secondary" size="lg" onClick={openEditModal}>✏️ {t('courses', 'editCourse')}</Button>
                 <button
@@ -448,8 +470,14 @@ const handleEnroll = async () => {
                     <>🚀 {t('publishing', 'publish')}</>
                   )}
                 </button>
-                <Button variant="ghost" size="lg" className="bg-red-500/20 hover:bg-red-500/40 text-white" onClick={() => setIsDeleteConfirm(true)}>🗑 {t('common', 'delete')}</Button>
+                {(user?.role === 'admin' || (user && Number(currentCourse.teacher_id) === Number(user.id))) && (
+                  <Button variant="ghost" size="lg" className="bg-red-500/20 hover:bg-red-500/40 text-white" onClick={() => setIsDeleteConfirm(true)}>🗑 {t('common', 'delete')}</Button>
+                )}
               </>
+            ) : isTeacher ? (
+              <div className="text-sm bg-white/10 text-white/90 px-4 py-2.5 rounded-xl border border-white/20 text-center font-medium">
+                👁️ {t('courses', 'readOnlyAccess')}
+              </div>
             ) : isEnrolled ? (
               <>
                 {enrollmentStatus === 'completed' && hasFinalModule && (
@@ -470,7 +498,7 @@ const handleEnroll = async () => {
       <section className="bg-white rounded-2xl p-6 shadow-sm ring-1 ring-slate-200">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900">{t('courses', 'curriculum')}</h2>
-          {isTeacher && <Button variant="outline" size="sm" onClick={() => setShowAddModule(true)}>{t('courses', 'addModule')}</Button>}
+          {isTeacher && currentCourse?.is_editable && <Button variant="outline" size="sm" onClick={() => setShowAddModule(true)}>{t('courses', 'addModule')}</Button>}
         </div>
 
         {curriculum.length === 0 ? (
@@ -492,7 +520,7 @@ const handleEnroll = async () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-slate-500">{mod.lessons.length} {t('courses', 'lessonsCount')}</span>
-                    {isTeacher && (
+                    {isTeacher && currentCourse?.is_editable && (
                       <>
                         <button onClick={() => openAddLesson(mod.module_id)} className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-1 rounded transition-colors">{t('courses', 'addLesson')}</button>
                         <button onClick={() => handleDeleteModule(mod.module_id)} className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors">{t('common', 'delete')}</button>
@@ -554,7 +582,7 @@ const handleEnroll = async () => {
                             </Link>
                           )}
                         </div>
-                        {isTeacher && (
+                        {isTeacher && currentCourse?.is_editable && (
                           <div className="flex items-center gap-1 ml-3 flex-shrink-0">
                             <button onClick={() => openAddAssignment(lesson.id)} className="text-xs text-amber-600 hover:bg-amber-50 px-2 py-1 rounded">{t('courses', 'addAssignment')}</button>
                             <button onClick={() => openEditLesson(lesson)} className="text-xs text-slate-500 hover:bg-slate-100 px-2 py-1 rounded">{t('common', 'edit')}</button>
@@ -680,6 +708,88 @@ const handleEnroll = async () => {
                 </select>
               </div>
             </div>
+
+            {/* Co-authors management (owner/admin only) */}
+            {currentCourse && (user?.role === 'admin' || (user && Number(currentCourse.teacher_id) === Number(user.id))) && (
+              <div className="border-t border-slate-200 pt-4 space-y-3">
+                <h4 className="text-sm font-semibold text-slate-800">
+                  {t('courses', 'coauthors') || 'Соавторы курса'}
+                </h4>
+                
+                {/* List of co-authors */}
+                {coauthors.length > 0 ? (
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                    {coauthors.map((coauthor) => (
+                      <div key={coauthor.id} className="flex items-center justify-between bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 text-xs">
+                        <div>
+                          <span className="font-medium text-slate-800">{coauthor.full_name || 'No Name'}</span>
+                          <span className="text-slate-400 ml-1.5">({coauthor.email})</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await apiClient.delete(`/courses/${courseId}/coauthors/${coauthor.id}`);
+                              fetchCoauthorsList();
+                            } catch (err) {
+                              console.error('Failed to remove coauthor', err);
+                            }
+                          }}
+                          className="text-red-500 hover:text-red-700 font-semibold"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic">
+                    {t('courses', 'noCoauthors') || 'У этого курса пока нет соавторов.'}
+                  </p>
+                )}
+
+                {/* Add co-author form */}
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    placeholder={t('courses', 'enterCoauthorEmail') || 'Email преподавателя'}
+                    className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={newCoauthorEmail}
+                    onChange={(e) => {
+                      setNewCoauthorEmail(e.target.value);
+                      setCoauthorError(null);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isAddingCoauthor}
+                    onClick={async () => {
+                      if (!newCoauthorEmail.trim()) return;
+                      setIsAddingCoauthor(true);
+                      setCoauthorError(null);
+                      try {
+                        await apiClient.post(`/courses/${courseId}/coauthors`, { email: newCoauthorEmail.trim() });
+                        setNewCoauthorEmail('');
+                        fetchCoauthorsList();
+                      } catch (err: any) {
+                        const errMsg = err.response?.data?.error || 'Failed to add coauthor';
+                        setCoauthorError(errMsg);
+                      } finally {
+                        setIsAddingCoauthor(false);
+                      }
+                    }}
+                  >
+                    {t('common', 'add') || 'Добавить'}
+                  </Button>
+                </div>
+                {coauthorError && (
+                  <p className="text-xs text-red-500">{coauthorError}</p>
+                )}
+              </div>
+            )}
+
             <div className="flex justify-end gap-3">
               <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>{t('common', 'cancel')}</Button>
               <Button type="submit" variant="primary" isLoading={isSaving}>{t('common', 'save')}</Button>
